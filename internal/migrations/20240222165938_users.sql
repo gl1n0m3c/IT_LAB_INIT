@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS specialists (
     fullname VARCHAR,
     level INTEGER DEFAULT (1),
     photo_url VARCHAR NOT NULL,
-    is_verified BOOLEAN NOT NULL
+    is_verified BOOLEAN DEFAULT(FALSE) NOT NULL
 );
 -- +goose StatementEnd
 

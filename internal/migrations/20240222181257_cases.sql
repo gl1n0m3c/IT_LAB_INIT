@@ -39,6 +39,6 @@ ALTER TABLE rated_cases
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS rated_cases;
+DROP TABLE IF EXISTS rated_cases, cases;
 DROP TYPE IF EXISTS status_type;
 -- +goose StatementEnd
