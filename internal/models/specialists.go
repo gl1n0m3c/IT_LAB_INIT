@@ -1,4 +1,4 @@
-package specialists
+package models
 
 type specialistBase struct {
 	Login    string `json:"login"`
@@ -19,6 +19,5 @@ type Specialist struct {
 }
 
 type SpecialistUpdate struct {
-	SpecialistCreate
-	ID int `json:"id"`
+	Specialist
 }

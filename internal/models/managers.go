@@ -1,4 +1,4 @@
-package managers
+package models
 
 type managerBase struct {
 	Login    string `json:"login"`
