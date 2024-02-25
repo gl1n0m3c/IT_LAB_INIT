@@ -1,10 +1,9 @@
-package users
+package repository
 
 import (
 	"context"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
-	"github.com/gl1n0m3c/IT_LAB_INIT/internal/repository"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
 	"github.com/jmoiron/sqlx"
 
@@ -15,7 +14,7 @@ type specialistsRepo struct {
 	db *sqlx.DB
 }
 
-func InitSpecialistsRepo(db *sqlx.DB) repository.Specialists {
+func InitSpecialistsRepo(db *sqlx.DB) Specialists {
 	return specialistsRepo{
 		db: db,
 	}

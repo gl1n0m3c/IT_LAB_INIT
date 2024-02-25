@@ -1,0 +1,59 @@
+definitions:
+  responses.MessageDataResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  responses.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  swagger.SpecialistCreate:
+    properties:
+      fullname:
+        type: string
+      login:
+        type: string
+      password:
+        type: string
+      photoUrl:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /public/specialist_register:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Registers a new specialist and returns a JWT and refresh token upon successful registration.
+        Automatically level=1, is_verified=false.
+      parameters:
+      - description: Specialist Registration
+        in: body
+        name: specialist
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.SpecialistCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successful registration, returning JWT and refresh token
+          schema:
+            $ref: '#/definitions/responses.MessageDataResponse'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      summary: Specialist Registration
+      tags:
+      - public
+swagger: "2.0"

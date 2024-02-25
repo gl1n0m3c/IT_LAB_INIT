@@ -5,14 +5,14 @@ import (
 )
 
 type SpecialistBase struct {
-	Login    string      `db:"login" json:"login"`
-	Password string      `db:"hashed_password" json:"password"`
-	Fullname null.String `db:"fullname" json:"fullname"`
+	Login    string      `db:"login" json:"login" validate:"required"`
+	Password string      `db:"hashed_password" json:"password" validate:"required"`
+	Fullname null.String `db:"fullname" json:"fullname,omitempty"`
 }
 
 type SpecialistCreate struct {
 	SpecialistBase
-	PhotoUrl null.String `db:"photo_url" json:"photoUrl"`
+	PhotoUrl null.String `db:"photo_url" json:"photoUrl,omitempty"`
 }
 
 type Specialist struct {

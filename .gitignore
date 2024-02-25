@@ -6,4 +6,5 @@ config.env
 tests.env
 
 # Logs
-.log
+error.log
+info.log
