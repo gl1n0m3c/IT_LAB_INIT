@@ -1,17 +1,17 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
+	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 
 	_ "github.com/lib/pq"
 )
 
-func GetDB() *sql.DB {
+func GetDB() *sqlx.DB {
 	connectionString := fmt.Sprintf(
-		"user=%v password=%v host=%v port=%v dbname=%v",
+		"user=%s password=%s host=%s port=%d dbname=%s sslmode=disable",
 		viper.GetString(config.DBUser),
 		viper.GetString(config.DBPassword),
 		viper.GetString(config.DBHost),
@@ -19,7 +19,7 @@ func GetDB() *sql.DB {
 		viper.GetString(config.DBName),
 	)
 
-	db, err := sql.Open("postgres", connectionString)
+	db, err := sqlx.Connect("postgres", connectionString)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to connect to DB: %s", err.Error()))
 	}

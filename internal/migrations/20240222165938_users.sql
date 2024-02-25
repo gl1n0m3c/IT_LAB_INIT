@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS specialists (
     login VARCHAR UNIQUE NOT NULL,
     hashed_password VARCHAR NOT NULL,
     fullname VARCHAR,
-    level INTEGER DEFAULT (1),
-    photo_url VARCHAR NOT NULL,
+    level INTEGER DEFAULT (1) NOT NULL ,
+    photo_url VARCHAR,
     is_verified BOOLEAN DEFAULT(FALSE) NOT NULL
 );
 -- +goose StatementEnd

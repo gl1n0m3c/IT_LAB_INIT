@@ -1,3 +1,3 @@
-package managers
+package users
 
 // TODO: Сделать приватные круды для менеджеров

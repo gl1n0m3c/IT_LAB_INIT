@@ -1,19 +1,21 @@
-package specialists
+package users
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/repository"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
+	"github.com/jmoiron/sqlx"
+
+	_ "github.com/lib/pq"
 )
 
 type specialistsRepo struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func InitSpecialistsRepo(db *sql.DB) repository.Specialists {
+func InitSpecialistsRepo(db *sqlx.DB) repository.Specialists {
 	return specialistsRepo{
 		db: db,
 	}
@@ -22,7 +24,7 @@ func InitSpecialistsRepo(db *sql.DB) repository.Specialists {
 func (s specialistsRepo) Create(ctx context.Context, specialist models.SpecialistCreate) (int, error) {
 	var createdSpecialistID int
 
-	tx, err := s.db.Begin()
+	tx, err := s.db.Beginx()
 	if err != nil {
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
@@ -33,10 +35,9 @@ func (s specialistsRepo) Create(ctx context.Context, specialist models.Specialis
 						VALUES ($1, $2, $3, $4)
 						RETURNING id;`
 
-	row := tx.QueryRowContext(ctx, specialistCreateQuery,
-		specialist.Login, hashedPassword, specialist.Fullname, specialist.PhotoUrl)
-
-	if err = row.Scan(&createdSpecialistID); err != nil {
+	err = tx.QueryRowxContext(ctx, specialistCreateQuery,
+		specialist.Login, hashedPassword, specialist.Fullname, specialist.PhotoUrl).Scan(&createdSpecialistID)
+	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return 0, utils.ErrNormalizer(
 				utils.ErrorPair{Message: utils.ScanErr, Err: err},
@@ -56,15 +57,11 @@ func (s specialistsRepo) Create(ctx context.Context, specialist models.Specialis
 func (s specialistsRepo) Get(ctx context.Context, specialistID int) (models.Specialist, error) {
 	var specialist models.Specialist
 
-	specialistGetQuery := `SELECT (id, login, hashed_password, fullname, level, photo_url, is_verified)
+	specialistGetQuery := `SELECT id, login, hashed_password, fullname, level, photo_url, is_verified
 						FROM specialists
 						WHERE id=$1;`
 
-	row := s.db.QueryRowContext(ctx, specialistGetQuery, specialistID)
-
-	// В поле password кладется хешированынй пароль
-	err := row.Scan(specialist.ID, specialist.Login, specialist.Password, specialist.Fullname,
-		specialist.Level, specialist.PhotoUrl, specialist.IsVerified)
+	err := s.db.GetContext(ctx, &specialist, specialistGetQuery, specialistID)
 	if err != nil {
 		return models.Specialist{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 	}
@@ -73,21 +70,18 @@ func (s specialistsRepo) Get(ctx context.Context, specialistID int) (models.Spec
 }
 
 func (s specialistsRepo) Update(ctx context.Context, specialistUpdate models.SpecialistUpdate) error {
-	tx, err := s.db.Begin()
+	tx, err := s.db.Beginx()
 	if err != nil {
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
 
+	specialistUpdate.Password = string(utils.HashPassword(specialistUpdate.Password))
+
 	specialistUpdateQuery := `UPDATE specialists
-							  SET login = $1, hashed_password = $2, fullname = $3, level = $4, photo_url = $5, is_verified = $6
-							  WHERE id = $7;`
+							  SET login = :login, hashed_password = :hashed_password, fullname = :fullname, level = :level, photo_url = :photo_url, is_verified = :is_verified
+							  WHERE id = :id;`
 
-	hashedPassword := utils.HashPassword(specialistUpdate.Password)
-
-	res, err := tx.ExecContext(ctx, specialistUpdateQuery,
-		specialistUpdate.Login, hashedPassword, specialistUpdate.Fullname,
-		specialistUpdate.Level, specialistUpdate.PhotoUrl, specialistUpdate.IsVerified,
-		specialistUpdate.ID)
+	res, err := tx.NamedExecContext(ctx, specialistUpdateQuery, specialistUpdate)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return utils.ErrNormalizer(
@@ -112,11 +106,11 @@ func (s specialistsRepo) Update(ctx context.Context, specialistUpdate models.Spe
 	if count != 1 {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return utils.ErrNormalizer(
-				utils.ErrorPair{Message: utils.RowsErr, Err: err},
+				utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)},
 				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
 			)
 		}
-		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf("too few lines returned `%v`", count)})
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -127,12 +121,12 @@ func (s specialistsRepo) Update(ctx context.Context, specialistUpdate models.Spe
 }
 
 func (s specialistsRepo) Delete(ctx context.Context, specialistID int) error {
-	tx, err := s.db.Begin()
+	tx, err := s.db.Beginx()
 	if err != nil {
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
 
-	specialistDeleteQuery := `DELETE FROM specialists where id=$1`
+	specialistDeleteQuery := `DELETE FROM specialists WHERE id=$1;`
 
 	res, err := tx.ExecContext(ctx, specialistDeleteQuery, specialistID)
 	if err != nil {
@@ -159,11 +153,11 @@ func (s specialistsRepo) Delete(ctx context.Context, specialistID int) error {
 	if count != 1 {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return utils.ErrNormalizer(
-				utils.ErrorPair{Message: utils.RowsErr, Err: err},
+				utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)},
 				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
 			)
 		}
-		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf("too few lines returned `%v`", count)})
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
 	}
 
 	if err = tx.Commit(); err != nil {

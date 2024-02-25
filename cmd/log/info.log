@@ -1,3 +1,0 @@
-{"level":"info","time":"2024-02-21 20:23:43","caller":"IT_LAB_INIT/cmd/main.go:17","message":"Logger Initialized"}
-{"level":"info","time":"2024-02-21 20:23:43","caller":"IT_LAB_INIT/cmd/main.go:20","message":"Config Initialized"}
-{"level":"info","time":"2024-02-21 20:23:43","caller":"IT_LAB_INIT/cmd/main.go:23","message":"Database Initialized"}

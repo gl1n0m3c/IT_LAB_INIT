@@ -12,6 +12,8 @@ const (
 	ScanErr        = "scan error: %v"
 	ExecErr        = "execution error: %v"
 	RowsErr        = "rows error: %v"
+
+	CountErr = "expected to delete 1 record, got %d"
 )
 
 type ErrorPair struct {

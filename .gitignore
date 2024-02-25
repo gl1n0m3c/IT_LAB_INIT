@@ -1,5 +1,9 @@
 # Goland
 .idea
 
-# Secret
+# Environment
 config.env
+tests.env
+
+# Logs
+.log

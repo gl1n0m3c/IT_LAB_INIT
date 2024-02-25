@@ -13,6 +13,8 @@ const (
 	DBPassword = "DB_PASSWORD"
 	DBPort     = "DB_PORT"
 	DBHost     = "DB_HOST"
+
+	DBResponseTime = "DB_RESPONSE_TIME"
 )
 
 func InitConfig() {
