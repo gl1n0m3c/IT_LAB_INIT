@@ -15,6 +15,14 @@ const (
 	DBHost     = "DB_HOST"
 
 	DBResponseTime = "DB_RESPONSE_TIME"
+
+	SessionPassword = "SESSION_PASSWORD"
+	SessionHost     = "SESSION_HOST"
+	SessionPort     = "SESSION_POST"
+	SessionSaveTime = "SESSION_SAVE_TIME"
+
+	JWTExpire = "JWT_EXPIRE"
+	JWTSecret = "JWT_SECRET"
 )
 
 func InitConfig() {

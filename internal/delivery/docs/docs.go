@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/public/specialist_register": {
             "post": {
-                "description": "Registers a new specialist and returns a JWT and refresh token upon successful registration.\nAutomatically level=1, is_verified=false.",
+                "description": "Registers a new specialist and returns a jwt and refresh token upon successful registration.\nAutomatically level=1, is_verified=false.\nLogin and password are required. There are some validation on password:\nMore than 8 symbols, contain at least one number, one uppercase and one lowercase letter.",
                 "consumes": [
                     "application/json"
                 ],
@@ -41,9 +41,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Successful registration, returning JWT and refresh token",
+                        "description": "Successful registration, returning jwt and refresh token",
                         "schema": {
-                            "$ref": "#/definitions/responses.MessageDataResponse"
+                            "$ref": "#/definitions/responses.JWTRefresh"
                         }
                     },
                     "400": {
@@ -63,11 +63,13 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "responses.MessageDataResponse": {
+        "responses.JWTRefresh": {
             "type": "object",
             "properties": {
-                "data": {},
-                "message": {
+                "JWT": {
+                    "type": "string"
+                },
+                "RefreshToken": {
                     "type": "string"
                 }
             }

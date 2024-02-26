@@ -6,7 +6,7 @@ import (
 
 type SpecialistBase struct {
 	Login    string      `db:"login" json:"login" validate:"required"`
-	Password string      `db:"hashed_password" json:"password" validate:"required"`
+	Password string      `db:"hashed_password" json:"password" validate:"required,password"`
 	Fullname null.String `db:"fullname" json:"fullname,omitempty"`
 }
 

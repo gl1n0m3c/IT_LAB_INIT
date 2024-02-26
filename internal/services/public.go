@@ -42,8 +42,3 @@ func (p publicService) SpecialistRegister(ctx context.Context, specialist models
 	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.Response201, "specialist", createdSpecialistID))
 	return createdSpecialistID, nil
 }
-
-// TODO: докрутить JWT UPDATE
-func (p publicService) SpecialistLogin(ctx context.Context, specialistID int) error {
-	return nil
-}

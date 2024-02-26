@@ -7,5 +7,4 @@ import (
 
 type Public interface {
 	SpecialistRegister(ctx context.Context, specialist models.SpecialistCreate) (int, error)
-	SpecialistLogin(ctx context.Context, specialistID int) error
 }

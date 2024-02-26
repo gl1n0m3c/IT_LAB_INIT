@@ -1,8 +1,9 @@
 definitions:
-  responses.MessageDataResponse:
+  responses.JWTRefresh:
     properties:
-      data: {}
-      message:
+      JWT:
+        type: string
+      RefreshToken:
         type: string
     type: object
   responses.MessageResponse:
@@ -29,8 +30,10 @@ paths:
       consumes:
       - application/json
       description: |-
-        Registers a new specialist and returns a JWT and refresh token upon successful registration.
+        Registers a new specialist and returns a jwt and refresh token upon successful registration.
         Automatically level=1, is_verified=false.
+        Login and password are required. There are some validation on password:
+        More than 8 symbols, contain at least one number, one uppercase and one lowercase letter.
       parameters:
       - description: Specialist Registration
         in: body
@@ -42,9 +45,9 @@ paths:
       - application/json
       responses:
         "201":
-          description: Successful registration, returning JWT and refresh token
+          description: Successful registration, returning jwt and refresh token
           schema:
-            $ref: '#/definitions/responses.MessageDataResponse'
+            $ref: '#/definitions/responses.JWTRefresh'
         "400":
           description: Invalid input
           schema:
