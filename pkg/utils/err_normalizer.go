@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -14,6 +15,11 @@ const (
 	RowsErr        = "rows error: %v"
 
 	CountErr = "expected to delete 1 record, got %d"
+)
+
+var (
+	UniqueSpecialistErr = errors.New("Ошибка при регистрации специалиста: специалист с таким логином уже существует.")
+	NeedToAuthorize     = errors.New("Необходимо заново авторизоваться")
 )
 
 type ErrorPair struct {

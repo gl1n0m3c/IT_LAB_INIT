@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
+	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
 	"github.com/gofrs/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
@@ -13,6 +14,7 @@ import (
 
 type Session interface {
 	Set(ctx context.Context, data SessionData) (string, error)
+	GetAndUpdate(ctx context.Context, refreshToken string) (string, SessionData, error)
 }
 
 type SessionData struct {
@@ -47,7 +49,7 @@ func InitRedisSession() Session {
 	return RedisSession{
 		rdb:               rdb,
 		sessionExpiration: time.Duration(viper.GetInt(config.SessionSaveTime)) * time.Hour * 24,
-		dbResponseTime:    time.Duration(viper.GetInt(config.DBResponseTime)),
+		dbResponseTime:    time.Duration(viper.GetInt(config.DBResponseTime)) * time.Second,
 	}
 }
 
@@ -73,4 +75,37 @@ func (r RedisSession) Set(ctx context.Context, data SessionData) (string, error)
 	}
 
 	return key, nil
+}
+
+func (r RedisSession) GetAndUpdate(ctx context.Context, refreshToken string) (string, SessionData, error) {
+	var userData SessionData
+
+	ctx, cansel := context.WithTimeout(ctx, r.dbResponseTime)
+	defer cansel()
+
+	data, err := r.rdb.Get(ctx, refreshToken).Result()
+	if err != nil {
+		switch err {
+		case redis.Nil:
+			return "", SessionData{}, utils.NeedToAuthorize
+		default:
+			return "", SessionData{}, err
+		}
+	}
+
+	if err := json.Unmarshal([]byte(data), &userData); err != nil {
+		return "", SessionData{}, err
+	}
+
+	key, err := r.Set(ctx, userData)
+	if err != nil {
+		return "", SessionData{}, err
+	}
+
+	err = r.rdb.Del(ctx, refreshToken).Err()
+	if err != nil {
+		return "", SessionData{}, err
+	}
+
+	return key, userData, nil
 }

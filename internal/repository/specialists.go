@@ -6,7 +6,7 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
 	"github.com/jmoiron/sqlx"
-
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
@@ -43,6 +43,11 @@ func (s specialistsRepo) Create(ctx context.Context, specialist models.Specialis
 				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
 			)
 		}
+
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return 0, utils.UniqueSpecialistErr
+		}
+
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 	}
 

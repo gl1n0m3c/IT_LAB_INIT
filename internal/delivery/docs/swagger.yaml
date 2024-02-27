@@ -25,6 +25,42 @@ definitions:
 info:
   contact: {}
 paths:
+  /public/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refreshes access and refresh tokens using a refresh token provided
+        in the Authorization header.
+      parameters:
+      - description: Refresh Token
+        in: header
+        name: Refresh
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful token refresh, returning new jwt and refresh token
+          schema:
+            $ref: '#/definitions/responses.JWTRefresh'
+        "400":
+          description: No refresh token provided
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Refresh Tokens
+      tags:
+      - public
   /public/specialist_register:
     post:
       consumes:

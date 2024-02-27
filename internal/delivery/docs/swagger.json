@@ -4,6 +4,61 @@
         "contact": {}
     },
     "paths": {
+        "/public/refresh": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Refreshes access and refresh tokens using a refresh token provided in the Authorization header.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Refresh Tokens",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Refresh Token",
+                        "name": "Refresh",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful token refresh, returning new jwt and refresh token",
+                        "schema": {
+                            "$ref": "#/definitions/responses.JWTRefresh"
+                        }
+                    },
+                    "400": {
+                        "description": "No refresh token provided",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or expired refresh token",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/public/specialist_register": {
             "post": {
                 "description": "Registers a new specialist and returns a jwt and refresh token upon successful registration.\nAutomatically level=1, is_verified=false.\nLogin and password are required. There are some validation on password:\nMore than 8 symbols, contain at least one number, one uppercase and one lowercase letter.",

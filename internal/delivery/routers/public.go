@@ -19,4 +19,5 @@ func InitPublicRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Ses
 	publicHandler := handlers.InitPublicHandler(publicService, session, JWTUtil)
 
 	group.POST("/specialist_register", publicHandler.SpecialistRegister)
+	group.POST("/refresh", publicHandler.Refresh)
 }
