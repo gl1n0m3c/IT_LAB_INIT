@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
-	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
 	"github.com/gofrs/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
@@ -87,7 +87,7 @@ func (r RedisSession) GetAndUpdate(ctx context.Context, refreshToken string) (st
 	if err != nil {
 		switch err {
 		case redis.Nil:
-			return "", SessionData{}, utils.NeedToAuthorize
+			return "", SessionData{}, customErrors.NeedToAuthorizeErr
 		default:
 			return "", SessionData{}, err
 		}

@@ -8,12 +8,15 @@ import (
 	_ "github.com/gl1n0m3c/IT_LAB_INIT/internal/models/swagger"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/services"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/database"
-	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/jwt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/responses"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/validators"
 	"github.com/go-playground/validator/v10"
+	"github.com/gofrs/uuid"
+	"github.com/guregu/null"
 	"net/http"
+	"path/filepath"
 )
 
 type publicHandler struct {
@@ -26,7 +29,7 @@ func InitPublicHandler(
 	service services.Public,
 	session database.Session,
 	JWTUtil jwt.JWT,
-) publicHandler {
+) Public {
 	return publicHandler{
 		service: service,
 		session: session,
@@ -34,28 +37,36 @@ func InitPublicHandler(
 	}
 }
 
-// SpecialistRegister registers a new specialist and returns a jwt and refresh token upon successful registration.
-// @Summary Specialist Registration
-// @Description Registers a new specialist and returns a jwt and refresh token upon successful registration.
+// SpecialistRegister registers a new specialist, uploads their photo, and returns a jwt and refresh token upon successful registration.
+// @Summary Specialist Registration with Photo Upload
+// @Description Registers a new specialist, uploads their photo, and returns a jwt and refresh token upon successful registration.
 // @Description Automatically level=1, is_verified=false.
-// @Description Login and password are required. There are some validation on password:
-// @Description More than 8 symbols, contain at least one number, one uppercase and one lowercase letter.
+// @Description Login and password are required, along with a photo upload.
+// @Description There are some validation on password: More than 8 symbols, contain at least one number, one uppercase and one lowercase letter.
 // @Tags public
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param specialist body swagger.SpecialistCreate true "Specialist Registration"
+// @Param login formData string true "Login"
+// @Param password formData string true "Password"
+// @Param fullname formData string false "Full Name"
+// @Param photo formData file false "Photo Upload"
 // @Success 201 {object} responses.JWTRefresh "Successful registration, returning jwt and refresh token"
 // @Failure 400 {object} responses.MessageResponse "Invalid input"
 // @Failure 500 {object} responses.MessageResponse "Internal server error"
 // @Router /public/specialist_register [post]
 func (p publicHandler) SpecialistRegister(c *gin.Context) {
-	var specialist models.SpecialistCreate
-
 	ctx := c.Request.Context()
 
-	if err := c.ShouldBindJSON(&specialist); err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(fmt.Sprintf(responses.Response400, err)))
-		return
+	login := c.PostForm("login")
+	password := c.PostForm("password")
+	fullname := c.PostForm("fullname")
+
+	specialist := models.SpecialistCreate{
+		SpecialistBase: models.SpecialistBase{
+			Login:    login,
+			Password: password,
+			Fullname: null.NewString(fullname, fullname != ""),
+		},
 	}
 
 	validate := validator.New()
@@ -66,10 +77,61 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 		return
 	}
 
-	ID, err := p.service.SpecialistRegister(ctx, specialist)
+	if file, err := c.FormFile("photo"); err != nil {
+		if err == http.ErrMissingFile {
+			specialist.PhotoUrl = null.NewString("", false)
+		} else {
+			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+			return
+		}
+	} else {
+		// Проверка на ограничение по размеру файла на 2МБ
+		err := c.Request.ParseMultipartForm(2 << 20)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadFileSize))
+			return
+		}
 
+		// Проверка на допустимый тип `Content-Type`
+		allowedTypes := map[string]bool{
+			"image/jpeg":    true,
+			"image/png":     true,
+			"image/svg+xml": true,
+		}
+		if !allowedTypes[file.Header.Get("Content-Type")] {
+			c.JSON(http.StatusBadRequest, responses.ResponseBadFileType)
+			return
+		}
+
+		extension := filepath.Ext(file.Filename)
+		// Проверка на допустимое расширение файла
+		allowedExtensions := map[string]bool{
+			".jpeg": true,
+			".jpg":  true,
+			".png":  true,
+			".svg":  true,
+		}
+		if !allowedExtensions[extension] {
+			c.JSON(http.StatusBadRequest, responses.ResponseBadFileType)
+			return
+		}
+		uuidBytes, err := uuid.NewV4()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+			return
+		}
+		uniqueFileName := uuidBytes.String() + extension
+		filePath := fmt.Sprintf("/static/specialists_img/%s", uniqueFileName)
+		if err := c.SaveUploadedFile(file, ".."+filePath); err != nil {
+			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+			return
+		}
+		specialist.PhotoUrl = null.NewString(filePath, true)
+	}
+
+	ID, err := p.service.SpecialistRegister(ctx, specialist)
 	if err != nil {
-		if errors.Is(err, utils.UniqueSpecialistErr) {
+		if errors.Is(err, customErrors.UniqueSpecialistErr) {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
 		}
@@ -78,9 +140,65 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 	}
 
 	accessToken := p.JWTUtil.CreateToken(ID, jwt.Specialist)
-
 	refreshToken, err := p.session.Set(ctx, database.SessionData{
 		UserID:   ID,
+		UserType: jwt.Specialist,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+
+	c.JSON(http.StatusCreated, responses.NewJWTRefreshResponse(accessToken, refreshToken))
+}
+
+// SpecialistLogin logs in a specialist and returns a jwt and refresh token upon successful login.
+// @Summary Specialist Login
+// @Description Logs in a specialist and returns a jwt and refresh token upon successful login.
+// @Tags public
+// @Accept json
+// @Produce json
+// @Param specialist body models.SpecialistLogin true "Specialist Login"
+// @Success 201 {object} responses.JWTRefresh "Successful login, returning jwt and refresh token"
+// @Failure 400 {object} responses.MessageResponse "Invalid input or incorrect password / login"
+// @Failure 500 {object} responses.MessageResponse "Internal server error"
+// @Router /public/specialist_login [post]
+func (p publicHandler) SpecialistLogin(c *gin.Context) {
+	var specialistLogin models.SpecialistLogin
+
+	ctx := c.Request.Context()
+
+	if err := c.ShouldBindJSON(&specialistLogin); err != nil {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(fmt.Sprintf(responses.Response400, err)))
+		return
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(specialistLogin); err != nil {
+		customErrMsg := validators.CustomErrorMessage(err)
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
+		return
+	}
+
+	success, specialistData, err := p.service.SpecialistLogin(ctx, specialistLogin)
+	if err != nil {
+		if err == customErrors.NoRowsLoginErr {
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+
+	if !success {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse("Неверный пароль"))
+		return
+	}
+
+	accessToken := p.JWTUtil.CreateToken(specialistData.ID, jwt.Specialist)
+
+	refreshToken, err := p.session.Set(ctx, database.SessionData{
+		UserID:   specialistData.ID,
 		UserType: jwt.Specialist,
 	})
 
@@ -117,7 +235,7 @@ func (p publicHandler) Refresh(c *gin.Context) {
 	newRefreshToken, userData, err := p.session.GetAndUpdate(ctx, oldRefreshToken)
 	if err != nil {
 		switch err {
-		case utils.NeedToAuthorize:
+		case customErrors.NeedToAuthorizeErr:
 			c.JSON(http.StatusUnauthorized, responses.NewMessageResponse(err.Error()))
 			return
 		default:
@@ -130,8 +248,3 @@ func (p publicHandler) Refresh(c *gin.Context) {
 
 	c.JSON(http.StatusOK, responses.NewJWTRefreshResponse(newAccessToken, newRefreshToken))
 }
-
-//{
-//"JWT": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDkwNzA1MTEsIklEIjoxOCwiVXNlclR5cGUiOiJzcGVjaWFsaXN0In0.FaIRZxczoUVWWVNKTIHyYkU9qqLH26h-z7nVF3RJMgM",
-//"RefreshToken": "d9ef7978-a1c5-4534-a176-f6905cf8c904"
-//}

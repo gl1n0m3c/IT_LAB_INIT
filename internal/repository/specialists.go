@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
@@ -45,7 +47,7 @@ func (s specialistsRepo) Create(ctx context.Context, specialist models.Specialis
 		}
 
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-			return 0, utils.UniqueSpecialistErr
+			return 0, customErrors.UniqueSpecialistErr
 		}
 
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
@@ -58,7 +60,7 @@ func (s specialistsRepo) Create(ctx context.Context, specialist models.Specialis
 	return createdSpecialistID, nil
 }
 
-func (s specialistsRepo) Get(ctx context.Context, specialistID int) (models.Specialist, error) {
+func (s specialistsRepo) GetByID(ctx context.Context, specialistID int) (models.Specialist, error) {
 	var specialist models.Specialist
 
 	specialistGetQuery := `SELECT id, login, hashed_password, fullname, level, photo_url, is_verified
@@ -67,7 +69,32 @@ func (s specialistsRepo) Get(ctx context.Context, specialistID int) (models.Spec
 
 	err := s.db.GetContext(ctx, &specialist, specialistGetQuery, specialistID)
 	if err != nil {
-		return models.Specialist{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		switch err {
+		case sql.ErrNoRows:
+			return models.Specialist{}, customErrors.NoRowsLoginErr
+		default:
+			return models.Specialist{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
+	}
+
+	return specialist, nil
+}
+
+func (s specialistsRepo) GetByLogin(ctx context.Context, specialistLogin string) (models.Specialist, error) {
+	var specialist models.Specialist
+
+	specialistGetQuery := `SELECT id, login, hashed_password, fullname, level, photo_url, is_verified
+						FROM specialists
+						WHERE login=$1;`
+
+	err := s.db.GetContext(ctx, &specialist, specialistGetQuery, specialistLogin)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return models.Specialist{}, customErrors.NoRowsLoginErr
+		default:
+			return models.Specialist{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
 	}
 
 	return specialist, nil

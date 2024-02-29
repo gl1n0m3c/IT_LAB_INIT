@@ -25,3 +25,8 @@ type Specialist struct {
 type SpecialistUpdate struct {
 	Specialist
 }
+
+type SpecialistLogin struct {
+	Login    string `json:"login" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}

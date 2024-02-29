@@ -16,6 +16,8 @@ import (
 func main() {
 	router := gin.Default()
 
+	router.Static("/static", "../static")
+
 	logger, loggerInfoFile, loggerErrorFile := log.InitLoggers()
 	defer loggerInfoFile.Close()
 	defer loggerErrorFile.Close()

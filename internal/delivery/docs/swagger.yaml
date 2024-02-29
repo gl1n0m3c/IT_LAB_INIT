@@ -1,4 +1,14 @@
 definitions:
+  models.SpecialistLogin:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    required:
+    - login
+    - password
+    type: object
   responses.JWTRefresh:
     properties:
       JWT:
@@ -9,17 +19,6 @@ definitions:
   responses.MessageResponse:
     properties:
       message:
-        type: string
-    type: object
-  swagger.SpecialistCreate:
-    properties:
-      fullname:
-        type: string
-      login:
-        type: string
-      password:
-        type: string
-      photoUrl:
         type: string
     type: object
 info:
@@ -61,22 +60,65 @@ paths:
       summary: Refresh Tokens
       tags:
       - public
-  /public/specialist_register:
+  /public/specialist_login:
     post:
       consumes:
       - application/json
-      description: |-
-        Registers a new specialist and returns a jwt and refresh token upon successful registration.
-        Automatically level=1, is_verified=false.
-        Login and password are required. There are some validation on password:
-        More than 8 symbols, contain at least one number, one uppercase and one lowercase letter.
+      description: Logs in a specialist and returns a jwt and refresh token upon successful
+        login.
       parameters:
-      - description: Specialist Registration
+      - description: Specialist Login
         in: body
         name: specialist
         required: true
         schema:
-          $ref: '#/definitions/swagger.SpecialistCreate'
+          $ref: '#/definitions/models.SpecialistLogin'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successful login, returning jwt and refresh token
+          schema:
+            $ref: '#/definitions/responses.JWTRefresh'
+        "400":
+          description: Invalid input or incorrect password / login
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      summary: Specialist Login
+      tags:
+      - public
+  /public/specialist_register:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Registers a new specialist, uploads their photo, and returns a jwt and refresh token upon successful registration.
+        Automatically level=1, is_verified=false.
+        Login and password are required, along with a photo upload.
+        There are some validation on password: More than 8 symbols, contain at least one number, one uppercase and one lowercase letter.
+      parameters:
+      - description: Login
+        in: formData
+        name: login
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: Full Name
+        in: formData
+        name: fullname
+        type: string
+      - description: Photo Upload
+        in: formData
+        name: photo
+        type: file
       produces:
       - application/json
       responses:
@@ -92,7 +134,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/responses.MessageResponse'
-      summary: Specialist Registration
+      summary: Specialist Registration with Photo Upload
       tags:
       - public
 swagger: "2.0"

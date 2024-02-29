@@ -3,9 +3,12 @@ package responses
 const (
 	Response201 = "Object %s was successfully created with id %d"
 
-	Response400 = "Goddamn, that was really bad request: %s"
+	Response400 = "Bad request: %s"
 
 	Response500 = "Internal server error"
+
+	ResponseBadFileSize = "Ваш файл слишком большой"
+	ResponseBadFileType = "Вы загрузили не фото"
 )
 
 type MessageResponse struct {
@@ -24,10 +27,6 @@ type JWTRefresh struct {
 
 func NewMessageResponse(message string) MessageResponse {
 	return MessageResponse{Message: message}
-}
-
-func NewMessageDataResponse(message string, data any) MessageDataResponse {
-	return MessageDataResponse{Message: message, Data: data}
 }
 
 func NewJWTRefreshResponse(JWT, RefreshToken string) JWTRefresh {

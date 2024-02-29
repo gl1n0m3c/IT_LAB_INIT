@@ -3,8 +3,8 @@ package test_specialist
 import (
 	"context"
 	"fmt"
+	"github.com/gl1n0m3c/IT_LAB_INIT/internal/repository"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/repository/tests"
-	"github.com/gl1n0m3c/IT_LAB_INIT/internal/repository/users"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
@@ -48,7 +48,7 @@ func TestMain(m *testing.M) {
 func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 	var createdIDs []int
 
-	specRepo := users.InitSpecialistsRepo(db)
+	specRepo := repository.InitSpecialistsRepo(db)
 	ctx := context.Background()
 
 	// Create test
@@ -62,11 +62,27 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 		createdIDs = append(createdIDs, id)
 	}
 
-	// Get test
+	// GetByID test
 	for i, id := range createdIDs {
-		specialist, err := specRepo.Get(ctx, id)
+		specialist, err := specRepo.GetByID(ctx, id)
 		if err != nil {
-			t.Errorf("Get error: %v", err)
+			t.Errorf("GetByID error: %v", err)
+			continue
+		}
+
+		assert.Equal(t, testcaseSpecialistCreate[i].Login, specialist.Login, "Compare Login")
+		assert.Equal(t, testcaseSpecialistCreate[i].Fullname, specialist.Fullname, "Compare Fullname")
+		assert.Equal(t, testcaseSpecialistCreate[i].PhotoUrl, specialist.PhotoUrl, "Compare PhotoUrl")
+		assert.Equal(t, false, specialist.IsVerified, "Compare IsVerified")
+		assert.Equal(t, 1, specialist.Level, "Compare Level")
+		assert.Equal(t, true, utils.ComparePassword(specialist.Password, testcaseSpecialistCreate[i].Password), "Compare Password")
+	}
+
+	// GetByLogin test
+	for i, spec := range testcaseSpecialistCreate {
+		specialist, err := specRepo.GetByLogin(ctx, spec.Login)
+		if err != nil {
+			t.Errorf("GetByID error: %v", err)
 			continue
 		}
 
@@ -88,9 +104,9 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 			continue
 		}
 
-		specialist, err := specRepo.Get(ctx, id)
+		specialist, err := specRepo.GetByID(ctx, id)
 		if err != nil {
-			t.Errorf("Get error: %v", err)
+			t.Errorf("GetByID error: %v", err)
 			continue
 		}
 
@@ -115,7 +131,7 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 
 	// Проверка на то, что записей не осталось
 	for _, id := range createdIDs {
-		_, err := specRepo.Get(ctx, id)
-		assert.NotNil(t, err, "Expected an error when trying to get a deleted specialist with ID %d, but got nil", id)
+		_, err := specRepo.GetByID(ctx, id)
+		assert.NotNil(t, err, "Expected an error when trying to GetByID a deleted specialist with ID %d, but got nil", id)
 	}
 }

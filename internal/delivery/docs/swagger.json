@@ -59,9 +59,9 @@
                 }
             }
         },
-        "/public/specialist_register": {
+        "/public/specialist_login": {
             "post": {
-                "description": "Registers a new specialist and returns a jwt and refresh token upon successful registration.\nAutomatically level=1, is_verified=false.\nLogin and password are required. There are some validation on password:\nMore than 8 symbols, contain at least one number, one uppercase and one lowercase letter.",
+                "description": "Logs in a specialist and returns a jwt and refresh token upon successful login.",
                 "consumes": [
                     "application/json"
                 ],
@@ -71,16 +71,79 @@
                 "tags": [
                     "public"
                 ],
-                "summary": "Specialist Registration",
+                "summary": "Specialist Login",
                 "parameters": [
                     {
-                        "description": "Specialist Registration",
+                        "description": "Specialist Login",
                         "name": "specialist",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/swagger.SpecialistCreate"
+                            "$ref": "#/definitions/models.SpecialistLogin"
                         }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successful login, returning jwt and refresh token",
+                        "schema": {
+                            "$ref": "#/definitions/responses.JWTRefresh"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or incorrect password / login",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/specialist_register": {
+            "post": {
+                "description": "Registers a new specialist, uploads their photo, and returns a jwt and refresh token upon successful registration.\nAutomatically level=1, is_verified=false.\nLogin and password are required, along with a photo upload.\nThere are some validation on password: More than 8 symbols, contain at least one number, one uppercase and one lowercase letter.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Specialist Registration with Photo Upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Login",
+                        "name": "login",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Full Name",
+                        "name": "fullname",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Photo Upload",
+                        "name": "photo",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -107,6 +170,21 @@
         }
     },
     "definitions": {
+        "models.SpecialistLogin": {
+            "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "responses.JWTRefresh": {
             "type": "object",
             "properties": {
@@ -122,23 +200,6 @@
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "swagger.SpecialistCreate": {
-            "type": "object",
-            "properties": {
-                "fullname": {
-                    "type": "string"
-                },
-                "login": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "photoUrl": {
                     "type": "string"
                 }
             }
