@@ -15,6 +15,93 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/public/camera_create": {
+            "post": {
+                "description": "Creates a new camera and returns its ID upon successful creation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Camera Creation",
+                "parameters": [
+                    {
+                        "description": "Camera Creation",
+                        "name": "camera",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CameraBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successful creation, returning camera ID",
+                        "schema": {
+                            "$ref": "#/definitions/responses.CreationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/camera_delete": {
+            "delete": {
+                "description": "Deletes an existing camera by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Camera Deletion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Camera ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful deletion"
+                    },
+                    "400": {
+                        "description": "Invalid input or Camera ID not found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/public/refresh": {
             "post": {
                 "security": [
@@ -181,6 +268,28 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.CameraBase": {
+            "type": "object",
+            "required": [
+                "coordinates",
+                "description",
+                "type"
+            ],
+            "properties": {
+                "coordinates": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "models.SpecialistLogin": {
             "type": "object",
             "required": [
@@ -193,6 +302,14 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "responses.CreationResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
                 }
             }
         },

@@ -8,3 +8,6 @@ tests.env
 # Logs
 error.log
 info.log
+
+# User img
+specialists_img

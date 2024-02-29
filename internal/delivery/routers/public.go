@@ -14,11 +14,16 @@ import (
 func InitPublicRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Session, JWTUtil jwt.JWT, logger *log.Logs) {
 
 	specialistRepo := repository.InitSpecialistsRepo(db)
+	cameraRepo := repository.InitCameraRepo(db)
 
-	publicService := services.InitPublicService(specialistRepo, logger)
+	publicService := services.InitPublicService(specialistRepo, cameraRepo, logger)
 	publicHandler := handlers.InitPublicHandler(publicService, session, JWTUtil)
 
 	group.POST("/specialist_register", publicHandler.SpecialistRegister)
 	group.POST("/specialist_login", publicHandler.SpecialistLogin)
+
+	group.POST("/camera_create", publicHandler.CameraCreate)
+	group.DELETE("/camera_delete", publicHandler.CameraDelete)
+
 	group.POST("/refresh", publicHandler.Refresh)
 }

@@ -12,3 +12,9 @@ type Specialists interface {
 	Update(ctx context.Context, specialistUpdate models.SpecialistUpdate) error
 	Delete(ctx context.Context, specialistID int) error
 }
+
+type Cameras interface {
+	Create(ctx context.Context, camera models.CameraBase) (int, error)
+	Get(ctx context.Context, cameraID int) (models.Camera, error)
+	Delete(ctx context.Context, cameraID int) error
+}

@@ -17,9 +17,7 @@ type specialistsRepo struct {
 }
 
 func InitSpecialistsRepo(db *sqlx.DB) Specialists {
-	return specialistsRepo{
-		db: db,
-	}
+	return specialistsRepo{db: db}
 }
 
 func (s specialistsRepo) Create(ctx context.Context, specialist models.SpecialistCreate) (int, error) {

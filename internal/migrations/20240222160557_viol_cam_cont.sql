@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS cameras (
     id SERIAL PRIMARY KEY,
     type VARCHAR(10) NOT NULL,
     description VARCHAR NOT NULL,
-    coordinates POINT NOT NULL
+    coordinates VARCHAR NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS contacts (

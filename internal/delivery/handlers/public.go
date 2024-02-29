@@ -17,6 +17,7 @@ import (
 	"github.com/guregu/null"
 	"net/http"
 	"path/filepath"
+	"strconv"
 )
 
 type publicHandler struct {
@@ -208,6 +209,82 @@ func (p publicHandler) SpecialistLogin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, responses.NewJWTRefreshResponse(accessToken, refreshToken))
+}
+
+// CameraCreate creates a new camera and returns its ID upon successful creation.
+// @Summary Camera Creation
+// @Description Creates a new camera and returns its ID upon successful creation.
+// @Tags public
+// @Accept json
+// @Produce json
+// @Param camera body models.CameraBase true "Camera Creation"
+// @Success 201 {object} responses.CreationResponse "Successful creation, returning camera ID"
+// @Failure 400 {object} responses.MessageResponse "Invalid input"
+// @Failure 500 {object} responses.MessageResponse "Internal server error"
+// @Router /public/camera_create [post]
+func (p publicHandler) CameraCreate(c *gin.Context) {
+	var camera models.CameraBase
+
+	ctx := c.Request.Context()
+
+	if err := c.ShouldBindJSON(&camera); err != nil {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(fmt.Sprintf(responses.Response400, err)))
+		return
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(camera); err != nil {
+		customErrMsg := validators.CustomErrorMessage(err)
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
+		return
+	}
+
+	createdCameraID, err := p.service.CameraCreate(ctx, camera)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+
+	c.JSON(http.StatusCreated, responses.CreationResponse{ID: createdCameraID})
+}
+
+// CameraDelete deletes an existing camera by its ID.
+// @Summary Camera Deletion
+// @Description Deletes an existing camera by its ID.
+// @Tags public
+// @Accept json
+// @Produce json
+// @Param id query int true "Camera ID"
+// @Success 204 "Successful deletion"
+// @Failure 400 {object} responses.MessageResponse "Invalid input or Camera ID not found"
+// @Failure 500 {object} responses.MessageResponse "Internal server error"
+// @Router /public/camera_delete [delete]
+func (p publicHandler) CameraDelete(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr, ok := c.GetQuery("id")
+	if !ok {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse("ID камеры не указан"))
+		return
+	}
+
+	cameraID, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse("Неверный ID камеры"))
+		return
+	}
+
+	err = p.service.CameraDelete(ctx, cameraID)
+	if err != nil {
+		if errors.Is(err, customErrors.NoRowsCameraErr) {
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 // Refresh updates access and refresh tokens

@@ -1,4 +1,19 @@
 definitions:
+  models.CameraBase:
+    properties:
+      coordinates:
+        items:
+          type: number
+        type: array
+      description:
+        type: string
+      type:
+        type: string
+    required:
+    - coordinates
+    - description
+    - type
+    type: object
   models.SpecialistLogin:
     properties:
       login:
@@ -8,6 +23,11 @@ definitions:
     required:
     - login
     - password
+    type: object
+  responses.CreationResponse:
+    properties:
+      id:
+        type: integer
     type: object
   responses.JWTRefresh:
     properties:
@@ -24,6 +44,63 @@ definitions:
 info:
   contact: {}
 paths:
+  /public/camera_create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new camera and returns its ID upon successful creation.
+      parameters:
+      - description: Camera Creation
+        in: body
+        name: camera
+        required: true
+        schema:
+          $ref: '#/definitions/models.CameraBase'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successful creation, returning camera ID
+          schema:
+            $ref: '#/definitions/responses.CreationResponse'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      summary: Camera Creation
+      tags:
+      - public
+  /public/camera_delete:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an existing camera by its ID.
+      parameters:
+      - description: Camera ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Successful deletion
+        "400":
+          description: Invalid input or Camera ID not found
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      summary: Camera Deletion
+      tags:
+      - public
   /public/refresh:
     post:
       consumes:
