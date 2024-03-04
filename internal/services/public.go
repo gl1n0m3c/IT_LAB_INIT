@@ -16,6 +16,7 @@ import (
 type publicService struct {
 	specialistRepo repository.Specialists
 	cameraRepo     repository.Cameras
+	caseRepo       repository.Cases
 	dbResponseTime time.Duration
 	logger         *log.Logs
 }
@@ -23,11 +24,13 @@ type publicService struct {
 func InitPublicService(
 	specialistRepo repository.Specialists,
 	cameraRepo repository.Cameras,
+	caseRepo repository.Cases,
 	logger *log.Logs,
 ) Public {
 	return publicService{
 		specialistRepo: specialistRepo,
 		cameraRepo:     cameraRepo,
+		caseRepo:       caseRepo,
 		dbResponseTime: time.Duration(viper.GetInt(config.DBResponseTime)) * time.Second,
 		logger:         logger,
 	}
@@ -87,5 +90,33 @@ func (p publicService) CameraDelete(ctx context.Context, cameraID int) error {
 	}
 
 	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessDelete, "camera", cameraID))
+	return nil
+}
+
+func (p publicService) CaseCreate(ctx context.Context, caseData models.CaseBase) (int, error) {
+	ctx, cansel := context.WithTimeout(ctx, p.dbResponseTime)
+	defer cansel()
+
+	createdCaseID, err := p.caseRepo.Create(ctx, caseData)
+	if err != nil {
+		p.logger.ErrorLogger.Error().Msg(err.Error())
+		return 0, err
+	}
+
+	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.Response201, "case", createdCaseID))
+	return createdCaseID, nil
+}
+
+func (p publicService) CaseDelete(ctx context.Context, caseID int) error {
+	ctx, cansel := context.WithTimeout(ctx, p.dbResponseTime)
+	defer cansel()
+
+	err := p.caseRepo.Delete(ctx, caseID)
+	if err != nil {
+		p.logger.ErrorLogger.Error().Msg(err.Error())
+		return err
+	}
+
+	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessDelete, "camera", caseID))
 	return nil
 }

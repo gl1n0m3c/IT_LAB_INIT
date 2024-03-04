@@ -7,8 +7,13 @@ const (
 
 	Response500 = "Internal server error"
 
+	ResponseNoByteStringProvided = "Байтовая строка отсутствует"
+	ResponseNoPhotoProvided      = "Фото отсуствует"
+
 	ResponseBadFileSize   = "Ваш файл слишком большой"
-	ResponseBadFileType   = "Вы загрузили не фото"
+	ResponseBadPhotoFile  = "Вы загрузили не фото"
+	ResponseBadByteString = "Байтовая строка некорректна"
+
 	ResponseSuccessDelete = "Объект %s с id %d был успешно удален"
 )
 

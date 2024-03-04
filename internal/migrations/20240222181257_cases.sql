@@ -4,9 +4,9 @@ CREATE TYPE status_type AS ENUM ('Correct', 'Incorrect', 'Unknown');
 
 CREATE TABLE IF NOT EXISTS cases (
     id SERIAL PRIMARY KEY,
-    camera_id INTEGER NOT NULL,
-    transport VARCHAR(8) NOT NULL,
-    violation_id INTEGER NOT NULL,
+    camera_id VARCHAR NOT NULL,
+    transport VARCHAR(20) NOT NULL,
+    violation_id VARCHAR NOT NULL,
     violation_value VARCHAR NOT NULL,
     level INTEGER NOT NULL,
     datetime TIMESTAMP WITH TIME ZONE NOT NULL,

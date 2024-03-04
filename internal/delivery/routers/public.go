@@ -15,8 +15,9 @@ func InitPublicRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Ses
 
 	specialistRepo := repository.InitSpecialistsRepo(db)
 	cameraRepo := repository.InitCameraRepo(db)
+	caseRepo := repository.InitCaseRepo(db)
 
-	publicService := services.InitPublicService(specialistRepo, cameraRepo, logger)
+	publicService := services.InitPublicService(specialistRepo, cameraRepo, caseRepo, logger)
 	publicHandler := handlers.InitPublicHandler(publicService, session, JWTUtil)
 
 	group.POST("/specialist_register", publicHandler.SpecialistRegister)
@@ -24,6 +25,8 @@ func InitPublicRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Ses
 
 	group.POST("/camera_create", publicHandler.CameraCreate)
 	group.DELETE("/camera_delete", publicHandler.CameraDelete)
+
+	group.POST("/case_create", publicHandler.CaseCreate)
 
 	group.POST("/refresh", publicHandler.Refresh)
 }

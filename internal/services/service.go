@@ -11,4 +11,7 @@ type Public interface {
 
 	CameraCreate(ctx context.Context, camera models.CameraBase) (int, error)
 	CameraDelete(ctx context.Context, cameraID int) error
+
+	CaseCreate(ctx context.Context, caseData models.CaseBase) (int, error)
+	CaseDelete(ctx context.Context, caseID int) error
 }

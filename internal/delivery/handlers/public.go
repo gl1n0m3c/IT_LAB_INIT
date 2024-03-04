@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gl1n0m3c/IT_LAB_INIT/internal/decoder"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	_ "github.com/gl1n0m3c/IT_LAB_INIT/internal/models/swagger"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/services"
@@ -93,36 +95,19 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 			return
 		}
 
-		// Проверка на допустимый тип `Content-Type`
-		allowedTypes := map[string]bool{
-			"image/jpeg":    true,
-			"image/png":     true,
-			"image/svg+xml": true,
-		}
-		if !allowedTypes[file.Header.Get("Content-Type")] {
-			c.JSON(http.StatusBadRequest, responses.ResponseBadFileType)
+		// Проверка на допустимый тип `Content-Type` и расширение
+		if !validators.ValidateFileTypeExtension(file) {
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadPhotoFile))
 			return
 		}
 
-		extension := filepath.Ext(file.Filename)
-		// Проверка на допустимое расширение файла
-		allowedExtensions := map[string]bool{
-			".jpeg": true,
-			".jpg":  true,
-			".png":  true,
-			".svg":  true,
-		}
-		if !allowedExtensions[extension] {
-			c.JSON(http.StatusBadRequest, responses.ResponseBadFileType)
-			return
-		}
 		uuidBytes, err := uuid.NewV4()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
 		}
-		uniqueFileName := uuidBytes.String() + extension
-		filePath := fmt.Sprintf("/static/specialists_img/%s", uniqueFileName)
+		uniqueFileName := uuidBytes.String() + filepath.Ext(file.Filename)
+		filePath := fmt.Sprintf("/static/img/specialists/%s", uniqueFileName)
 		if err := c.SaveUploadedFile(file, ".."+filePath); err != nil {
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
@@ -286,6 +271,103 @@ func (p publicHandler) CameraDelete(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// CaseCreate creates a new case and returns its ID upon successful creation.
+// @Summary Case Creation
+// @Description Creates a new case with a photo (.jpeg / .jpg / .png / .svg) and case data in byte string.
+// @Tags public
+// @Accept multipart/form-data
+// @Produce json
+// @Param photo formData file true "Photo of the case"
+// @Param byte_string formData string true "Case data in byte string format"
+// @Success 201 {object} responses.CreationResponse "Successful creation, returning case ID"
+// @Failure 400 {object} responses.MessageResponse "Invalid input"
+// @Failure 500 {object} responses.MessageResponse "Internal server error"
+// @Router /public/case_create [post]
+func (p publicHandler) CaseCreate(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	file, err := c.FormFile("photo")
+	if err != nil {
+		if err == http.ErrMissingFile {
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseNoPhotoProvided))
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+			return
+		}
+	}
+
+	// Проверка на допустимый тип `Content-Type` и расширение
+	if !validators.ValidateFileTypeExtension(file) {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadPhotoFile))
+		return
+	}
+
+	uuidBytes, err := uuid.NewV4()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+	uniqueFileName := uuidBytes.String() + filepath.Ext(file.Filename)
+	filePath := fmt.Sprintf("/static/img/cases/%s", uniqueFileName)
+	if err := c.SaveUploadedFile(file, ".."+filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+
+	bitString := c.PostForm("byte_string")
+	if bitString == "" {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseNoByteStringProvided))
+		return
+	}
+
+	var dataBytes []byte
+	for i := 0; i+8 <= len(bitString); i += 8 {
+		byteString := bitString[i : i+8]
+		byteValue, err := strconv.ParseUint(byteString, 2, 8)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse("Ошибка при преобразовании битовой строки в байты"))
+			return
+		}
+		dataBytes = append(dataBytes, byte(byteValue))
+	}
+
+	if len(dataBytes) <= 7 {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadByteString))
+		return
+	}
+
+	result, err := decoder.Decoder(bytes.NewBuffer(dataBytes[2:]))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadByteString))
+		return
+	}
+
+	cameraType, err := decoder.MapToStruct(result)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+		return
+	}
+
+	caseData, err := cameraType.CameraDataToCaseBase()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+		return
+	}
+	caseData.PhotoUrl = filePath
+
+	createdCaseID, err := p.service.CaseCreate(ctx, caseData)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+
+	c.JSON(http.StatusCreated, responses.CreationResponse{ID: createdCaseID})
+}
+
+func (p publicHandler) CaseDelete(c *gin.Context) {}
 
 // Refresh updates access and refresh tokens
 // @Summary Refresh Tokens

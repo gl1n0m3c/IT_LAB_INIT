@@ -9,5 +9,7 @@ type Public interface {
 	CameraCreate(c *gin.Context)
 	CameraDelete(c *gin.Context)
 
+	CaseCreate(c *gin.Context)
+
 	Refresh(c *gin.Context)
 }

@@ -2,44 +2,35 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
-	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
-	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
-type cameraRepo struct {
+type caseRepo struct {
 	db *sqlx.DB
 }
 
-func InitCameraRepo(db *sqlx.DB) Cameras {
-	return cameraRepo{db: db}
+func InitCaseRepo(db *sqlx.DB) Cases {
+	return caseRepo{db: db}
 }
 
-func (c cameraRepo) Create(ctx context.Context, camera models.CameraBase) (int, error) {
-	var createdCameraID int
-
-	uuidBytes, err := uuid.NewV4()
-	if err != nil {
-		return 0, err
-	}
-
-	key := uuidBytes.String()
+func (c caseRepo) Create(ctx context.Context, caseData models.CaseBase) (int, error) {
+	var createdCaseID int
 
 	tx, err := c.db.Beginx()
 	if err != nil {
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
 
-	cameraQueue := `INSERT INTO cameras (id, type, description, coordinates)
-					VALUES ($1, $2, $3, $4) RETURNING id;`
+	caseCreateQuery := `INSERT INTO cases (camera_id, transport, violation_id, violation_value, level, datetime, photo_url)
+						VALUES ($1, $2, $3, $4, $5, $6, $7)
+						RETURNING id;`
 
-	coordinates := fmt.Sprintf("%g,%g", camera.Coordinates[0], camera.Coordinates[1])
-
-	err = tx.QueryRowContext(ctx, cameraQueue, key, camera.Type, camera.Description, coordinates).Scan(&createdCameraID)
+	err = tx.QueryRowxContext(ctx, caseCreateQuery,
+		caseData.CameraID, caseData.Transport, caseData.ViolationID, caseData.ViolationValue,
+		caseData.Level, caseData.Datetime, caseData.PhotoUrl).Scan(&createdCaseID)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return 0, utils.ErrNormalizer(
@@ -47,6 +38,7 @@ func (c cameraRepo) Create(ctx context.Context, camera models.CameraBase) (int, 
 				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
 			)
 		}
+
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 	}
 
@@ -54,43 +46,18 @@ func (c cameraRepo) Create(ctx context.Context, camera models.CameraBase) (int, 
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.CommitErr, Err: err})
 	}
 
-	return createdCameraID, nil
+	return createdCaseID, nil
 }
 
-func (c cameraRepo) Get(ctx context.Context, cameraID int) (models.Camera, error) {
-	var camera models.Camera
-	var coords string
-	var latitude, longitude float64
-
-	cameraGetQuery := `SELECT id, type, description, coordinates
-						FROM cameras
-						WHERE id=$1;`
-
-	err := c.db.QueryRowxContext(ctx, cameraGetQuery, cameraID).Scan(&camera.ID, &camera.Type, &camera.Description, &coords)
-	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			return models.Camera{}, customErrors.NoRowsCameraErr
-		default:
-			return models.Camera{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
-		}
-	}
-
-	_, _ = fmt.Sscanf(coords, "%g,%g", &latitude, &longitude)
-	camera.Coordinates = [2]float64{latitude, longitude}
-
-	return camera, nil
-}
-
-func (c cameraRepo) Delete(ctx context.Context, cameraID int) error {
+func (c caseRepo) Delete(ctx context.Context, caseID int) error {
 	tx, err := c.db.Beginx()
 	if err != nil {
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
 
-	cameraDeleteQuery := `DELETE FROM cameras WHERE id=$1;`
+	caseDeleteQuery := `DELETE FROM cases WHERE id=$1;`
 
-	res, err := tx.ExecContext(ctx, cameraDeleteQuery, cameraID)
+	res, err := tx.ExecContext(ctx, caseDeleteQuery, caseID)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return utils.ErrNormalizer(
@@ -119,7 +86,7 @@ func (c cameraRepo) Delete(ctx context.Context, cameraID int) error {
 				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
 			)
 		}
-		return customErrors.NoRowsCameraErr
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
 	}
 
 	if err = tx.Commit(); err != nil {

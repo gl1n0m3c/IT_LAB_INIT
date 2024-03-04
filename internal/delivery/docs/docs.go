@@ -102,6 +102,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/public/case_create": {
+            "post": {
+                "description": "Creates a new case with a photo (.jpeg / .jpg / .png / .svg) and case data in byte string.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Case Creation",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Photo of the case",
+                        "name": "photo",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Case data in byte string format",
+                        "name": "byte_string",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successful creation, returning case ID",
+                        "schema": {
+                            "$ref": "#/definitions/responses.CreationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/public/refresh": {
             "post": {
                 "security": [

@@ -18,3 +18,8 @@ type Cameras interface {
 	Get(ctx context.Context, cameraID int) (models.Camera, error)
 	Delete(ctx context.Context, cameraID int) error
 }
+
+type Cases interface {
+	Create(ctx context.Context, caseData models.CaseBase) (int, error)
+	Delete(ctx context.Context, caseID int) error
+}

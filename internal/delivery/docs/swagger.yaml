@@ -101,6 +101,41 @@ paths:
       summary: Camera Deletion
       tags:
       - public
+  /public/case_create:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Creates a new case with a photo (.jpeg / .jpg / .png / .svg) and
+        case data in byte string.
+      parameters:
+      - description: Photo of the case
+        in: formData
+        name: photo
+        required: true
+        type: file
+      - description: Case data in byte string format
+        in: formData
+        name: byte_string
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successful creation, returning case ID
+          schema:
+            $ref: '#/definitions/responses.CreationResponse'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      summary: Case Creation
+      tags:
+      - public
   /public/refresh:
     post:
       consumes:
