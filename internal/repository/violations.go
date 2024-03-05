@@ -1,45 +1,46 @@
 package repository
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
+	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
-type contactRepo struct {
+type violationRepo struct {
 	db *sqlx.DB
 }
 
-func InitContactRepo(db *sqlx.DB) Contacts {
-	return contactRepo{db: db}
+func InitViolationRepo(db *sqlx.DB) Violations {
+	return violationRepo{db: db}
 }
 
-func (c contactRepo) Create(contacts []models.Contact) (int, error) {
+func (v violationRepo) Create(violations []models.Violation) (int, error) {
 	var accepted int
 
-	tx, err := c.db.Beginx()
+	tx, err := v.db.Beginx()
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback()
 
-	contactsQueue := `INSERT INTO contacts (transport, contacts)
-					  VALUES ($1, $2)`
+	cameraQueue := `INSERT INTO violation (id, type, amount)
+					VALUES ($1, $2, $3)`
 
-	for i, contact := range contacts {
+	for i, violation := range violations {
 		savepoint := fmt.Sprintf("sp_%d", i)
 		if _, err := tx.Exec("SAVEPOINT " + savepoint); err != nil {
 			return 0, err
 		}
 
-		userContactsJSON, err := json.Marshal(contact.UserContacts)
+		uuidBytes, err := uuid.NewV4()
 		if err != nil {
 			return 0, err
 		}
 
-		res, err := tx.Exec(contactsQueue, contact.Transport, userContactsJSON)
+		key := uuidBytes.String()
+
+		res, err := tx.Exec(cameraQueue, key, violation.Type, violation.Amount)
 		if err != nil {
 			if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
 				_, rbErr := tx.Exec("ROLLBACK TO SAVEPOINT " + savepoint)

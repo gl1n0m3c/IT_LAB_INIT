@@ -23,3 +23,11 @@ type Cases interface {
 	Create(ctx context.Context, caseData models.CaseBase) (int, error)
 	Delete(ctx context.Context, caseID int) error
 }
+
+type Violations interface {
+	Create(violations []models.Violation) (int, error)
+}
+
+type Contacts interface {
+	Create(contacts []models.Contact) (int, error)
+}

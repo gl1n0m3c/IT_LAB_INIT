@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS violation (
     id VARCHAR UNIQUE PRIMARY KEY,
-    type VARCHAR NOT NULL,
+    type VARCHAR UNIQUE NOT NULL,
     amount REAL NOT NULL
 );
 
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS cameras (
 );
 
 CREATE TABLE IF NOT EXISTS contacts (
-    transport VARCHAR(8) UNIQUE PRIMARY KEY ,
+    transport VARCHAR(20) UNIQUE PRIMARY KEY ,
     contacts JSONB NOT NULL
 );
 -- +goose StatementEnd
