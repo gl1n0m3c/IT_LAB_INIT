@@ -10,3 +10,5 @@ error.log
 info.log
 
 # User img
+static/img/cases
+static/img/specialists
