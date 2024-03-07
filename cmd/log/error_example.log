@@ -1,0 +1,4 @@
+{"level":"error","time":"2024-02-27 23:08:20","caller":"IT_LAB_INIT/internal/services/public.go:38","message":"Ошибка при регистрации специалиста: специалист с таким логином уже существует."}
+{"level":"error","time":"2024-02-29 17:10:47","caller":"IT_LAB_INIT/internal/services/public.go:53","message":"Пользователь с таким логином не найден"}
+{"level":"error","time":"2024-03-04 15:42:25","caller":"IT_LAB_INIT/internal/services/public.go:88","message":"rows error: expected to delete 1 record, got 0"}
+{"level":"error","time":"2024-03-04 15:50:58","caller":"IT_LAB_INIT/internal/services/public.go:88","message":"Камера с таким id не найдена"}

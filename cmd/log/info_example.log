@@ -1,0 +1,8 @@
+{"level":"info","time":"2024-02-27 12:26:11","caller":"IT_LAB_INIT/cmd/main.go:22","message":"Logger Initialized"}
+{"level":"info","time":"2024-02-27 12:26:11","caller":"IT_LAB_INIT/cmd/main.go:25","message":"Config Initialized"}
+{"level":"info","time":"2024-02-27 12:26:11","caller":"IT_LAB_INIT/cmd/main.go:28","message":"Database Initialized"}
+{"level":"info","time":"2024-02-27 12:26:11","caller":"IT_LAB_INIT/cmd/main.go:31","message":"Session Initialized"}
+{"level":"info","time":"2024-02-27 12:26:11","caller":"IT_LAB_INIT/cmd/main.go:34","message":"JWTUtil Initialized"}
+{"level":"info","time":"2024-02-27 12:26:11","caller":"IT_LAB_INIT/cmd/main.go:38","message":"Swagger Initialized"}
+{"level":"info","time":"2024-02-27 12:26:11","caller":"IT_LAB_INIT/cmd/main.go:41","message":"Routing Initialized"}
+{"level":"info","time":"2024-02-27 12:26:49","caller":"IT_LAB_INIT/internal/services/public.go:42","message":"Object specialist was successfully created with id 9"}

@@ -203,7 +203,7 @@ func (p publicHandler) SpecialistLogin(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param camera body models.CameraBase true "Camera Creation"
-// @Success 201 {object} responses.CreationResponse "Successful creation, returning camera ID"
+// @Success 201 {object} responses.CreationStringResponse "Successful creation, returning camera ID"
 // @Failure 400 {object} responses.MessageResponse "Invalid input"
 // @Failure 500 {object} responses.MessageResponse "Internal server error"
 // @Router /public/camera_create [post]
@@ -226,11 +226,12 @@ func (p publicHandler) CameraCreate(c *gin.Context) {
 
 	createdCameraID, err := p.service.CameraCreate(ctx, camera)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
 
-	c.JSON(http.StatusCreated, responses.CreationResponse{ID: createdCameraID})
+	c.JSON(http.StatusCreated, responses.CreationStringResponse{ID: createdCameraID})
 }
 
 // CameraDelete deletes an existing camera by its ID.
@@ -247,19 +248,13 @@ func (p publicHandler) CameraCreate(c *gin.Context) {
 func (p publicHandler) CameraDelete(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	idStr, ok := c.GetQuery("id")
+	cameraID, ok := c.GetQuery("id")
 	if !ok {
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse("ID камеры не указан"))
 		return
 	}
 
-	cameraID, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, responses.NewMessageResponse("Неверный ID камеры"))
-		return
-	}
-
-	err = p.service.CameraDelete(ctx, cameraID)
+	err := p.service.CameraDelete(ctx, cameraID)
 	if err != nil {
 		if errors.Is(err, customErrors.NoRowsCameraErr) {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
@@ -280,7 +275,7 @@ func (p publicHandler) CameraDelete(c *gin.Context) {
 // @Produce json
 // @Param photo formData file true "Photo of the case"
 // @Param byte_string formData string true "Case data in byte string format"
-// @Success 201 {object} responses.CreationResponse "Successful creation, returning case ID"
+// @Success 201 {object} responses.CreationIntResponse "Successful creation, returning case ID"
 // @Failure 400 {object} responses.MessageResponse "Invalid input"
 // @Failure 500 {object} responses.MessageResponse "Internal server error"
 // @Router /public/case_create [post]
@@ -364,7 +359,7 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, responses.CreationResponse{ID: createdCaseID})
+	c.JSON(http.StatusCreated, responses.CreationIntResponse{ID: createdCaseID})
 }
 
 func (p publicHandler) CaseDelete(c *gin.Context) {}

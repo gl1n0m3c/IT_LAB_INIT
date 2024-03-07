@@ -13,3 +13,9 @@ type Public interface {
 
 	Refresh(c *gin.Context)
 }
+
+type Specialists interface {
+	CreateRated(c *gin.Context)
+	GetRatedSolved(c *gin.Context)
+	UpdateRatedStatus(c *gin.Context)
+}

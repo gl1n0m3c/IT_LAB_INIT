@@ -1,11 +1,12 @@
 package responses
 
 const (
-	Response201 = "Объект %s был успешно создан с id: %d"
-
 	Response400 = "Bad request: %s"
-
 	Response500 = "Internal server error"
+
+	ResponseSuccessCreate = "Объект %s был успешно создан с id: %d"
+	ResponseSuccessGet    = "Объект(ы) %s с был(и) успешно получен(ы)"
+	ResponseSuccessUpdate = "Объект %s с был успешно обновлен"
 
 	ResponseNoByteStringProvided = "Байтовая строка отсутствует"
 	ResponseNoPhotoProvided      = "Фото отсуствует"
@@ -14,11 +15,18 @@ const (
 	ResponseBadPhotoFile  = "Вы загрузили не фото"
 	ResponseBadByteString = "Байтовая строка некорректна"
 
+	ResponseBadQuery = "Параметры запроса указаны некорректно"
+	ResponseBadBody  = "Тело запроса составлено некорректно"
+
 	ResponseSuccessDelete = "Объект %s с id %d был успешно удален"
 )
 
-type CreationResponse struct {
+type CreationIntResponse struct {
 	ID int `json:"id"`
+}
+
+type CreationStringResponse struct {
+	ID string `json:"id"`
 }
 
 type MessageResponse struct {

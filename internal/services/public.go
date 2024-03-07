@@ -46,7 +46,7 @@ func (p publicService) SpecialistRegister(ctx context.Context, specialist models
 		return 0, err
 	}
 
-	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.Response201, "specialist", createdSpecialistID))
+	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessCreate, "specialist", createdSpecialistID))
 	return createdSpecialistID, nil
 }
 
@@ -65,21 +65,21 @@ func (p publicService) SpecialistLogin(ctx context.Context, specialist models.Sp
 	return isCompare, specialistData, nil
 }
 
-func (p publicService) CameraCreate(ctx context.Context, camera models.CameraBase) (int, error) {
+func (p publicService) CameraCreate(ctx context.Context, camera models.CameraBase) (string, error) {
 	ctx, cansel := context.WithTimeout(ctx, p.dbResponseTime)
 	defer cansel()
 
 	createdCameraID, err := p.cameraRepo.Create(ctx, camera)
 	if err != nil {
 		p.logger.ErrorLogger.Error().Msg(err.Error())
-		return 0, err
+		return "", err
 	}
 
-	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.Response201, "camera", createdCameraID))
+	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessCreate, "camera", createdCameraID))
 	return createdCameraID, nil
 }
 
-func (p publicService) CameraDelete(ctx context.Context, cameraID int) error {
+func (p publicService) CameraDelete(ctx context.Context, cameraID string) error {
 	ctx, cansel := context.WithTimeout(ctx, p.dbResponseTime)
 	defer cansel()
 
@@ -97,13 +97,13 @@ func (p publicService) CaseCreate(ctx context.Context, caseData models.CaseBase)
 	ctx, cansel := context.WithTimeout(ctx, p.dbResponseTime)
 	defer cansel()
 
-	createdCaseID, err := p.caseRepo.Create(ctx, caseData)
+	createdCaseID, err := p.caseRepo.CreateCase(ctx, caseData)
 	if err != nil {
 		p.logger.ErrorLogger.Error().Msg(err.Error())
 		return 0, err
 	}
 
-	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.Response201, "case", createdCaseID))
+	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessCreate, "case", createdCaseID))
 	return createdCaseID, nil
 }
 
@@ -111,7 +111,7 @@ func (p publicService) CaseDelete(ctx context.Context, caseID int) error {
 	ctx, cansel := context.WithTimeout(ctx, p.dbResponseTime)
 	defer cansel()
 
-	err := p.caseRepo.Delete(ctx, caseID)
+	err := p.caseRepo.DeleteCase(ctx, caseID)
 	if err != nil {
 		p.logger.ErrorLogger.Error().Msg(err.Error())
 		return err

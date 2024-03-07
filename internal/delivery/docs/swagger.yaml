@@ -14,6 +14,53 @@ definitions:
     - description
     - type
     type: object
+  models.Rated:
+    properties:
+      case_id:
+        type: integer
+      choice:
+        type: boolean
+      date:
+        type: string
+      id:
+        type: integer
+      specialist_id:
+        type: integer
+      status:
+        type: string
+    required:
+    - case_id
+    - choice
+    type: object
+  models.RatedCreate:
+    properties:
+      case_id:
+        type: integer
+      choice:
+        type: boolean
+    required:
+    - case_id
+    - choice
+    type: object
+  models.RatedCursor:
+    properties:
+      cursor:
+        $ref: '#/definitions/null.Int'
+      rated:
+        items:
+          $ref: '#/definitions/models.Rated'
+        type: array
+    type: object
+  models.RatedUpdate:
+    properties:
+      case_id:
+        type: integer
+      status:
+        type: string
+    required:
+    - case_id
+    - status
+    type: object
   models.SpecialistLogin:
     properties:
       login:
@@ -24,10 +71,23 @@ definitions:
     - login
     - password
     type: object
-  responses.CreationResponse:
+  null.Int:
+    properties:
+      int64:
+        type: integer
+      valid:
+        description: Valid is true if Int64 is not NULL
+        type: boolean
+    type: object
+  responses.CreationIntResponse:
     properties:
       id:
         type: integer
+    type: object
+  responses.CreationStringResponse:
+    properties:
+      id:
+        type: string
     type: object
   responses.JWTRefresh:
     properties:
@@ -62,7 +122,7 @@ paths:
         "201":
           description: Successful creation, returning camera ID
           schema:
-            $ref: '#/definitions/responses.CreationResponse'
+            $ref: '#/definitions/responses.CreationStringResponse'
         "400":
           description: Invalid input
           schema:
@@ -124,7 +184,7 @@ paths:
         "201":
           description: Successful creation, returning case ID
           schema:
-            $ref: '#/definitions/responses.CreationResponse'
+            $ref: '#/definitions/responses.CreationIntResponse'
         "400":
           description: Invalid input
           schema:
@@ -249,4 +309,137 @@ paths:
       summary: Specialist Registration with Photo Upload
       tags:
       - public
+  /specialist/create_rated:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new rating entry based on the provided data.
+      parameters:
+      - description: Rated data
+        in: body
+        name: rated_data
+        required: true
+        schema:
+          $ref: '#/definitions/models.RatedCreate'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created the rating
+          schema:
+            $ref: '#/definitions/responses.CreationIntResponse'
+        "400":
+          description: Invalid input data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: JWT is invalid or expired
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - specialists
+  /specialist/get_rated_solved:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a rated solved entry based on the provided cursor ID.
+      parameters:
+      - description: Cursor ID for pagination
+        in: query
+        name: cursor_id
+        required: true
+        type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved the rated solved
+          schema:
+            $ref: '#/definitions/models.RatedCursor'
+        "400":
+          description: Invalid input data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: JWT is invalid or expired
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - specialists
+  /specialist/update_rated_status:
+    put:
+      consumes:
+      - application/json
+      description: Updates the status of a rated entry based on the provided Rated
+        ID and sets it to the new status.
+      parameters:
+      - description: Rated update information
+        in: body
+        name: rated_update
+        required: true
+        schema:
+          $ref: '#/definitions/models.RatedUpdate'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated the rated status
+        "400":
+          description: Invalid input data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: JWT is invalid or expired
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - specialists
 swagger: "2.0"

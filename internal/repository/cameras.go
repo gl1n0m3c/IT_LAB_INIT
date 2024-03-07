@@ -19,45 +19,64 @@ func InitCameraRepo(db *sqlx.DB) Cameras {
 	return cameraRepo{db: db}
 }
 
-func (c cameraRepo) Create(ctx context.Context, camera models.CameraBase) (int, error) {
-	var createdCameraID int
-
+func (c cameraRepo) Create(ctx context.Context, camera models.CameraBase) (string, error) {
 	uuidBytes, err := uuid.NewV4()
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	key := uuidBytes.String()
 
 	tx, err := c.db.Beginx()
 	if err != nil {
-		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
+		return "", utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
 
 	cameraQueue := `INSERT INTO cameras (id, type, description, coordinates)
-					VALUES ($1, $2, $3, $4) RETURNING id;`
+					VALUES ($1, $2, $3, $4);`
 
 	coordinates := fmt.Sprintf("%g,%g", camera.Coordinates[0], camera.Coordinates[1])
 
-	err = tx.QueryRowContext(ctx, cameraQueue, key, camera.Type, camera.Description, coordinates).Scan(&createdCameraID)
+	res, err := tx.ExecContext(ctx, cameraQueue, key, camera.Type, camera.Description, coordinates)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
-			return 0, utils.ErrNormalizer(
+			return "", utils.ErrNormalizer(
 				utils.ErrorPair{Message: utils.ScanErr, Err: err},
 				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
 			)
 		}
-		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		return "", utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return "", utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return "", utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
+	}
+
+	if count != 1 {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return "", utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return "", utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
 	}
 
 	if err = tx.Commit(); err != nil {
-		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.CommitErr, Err: err})
+		return "", utils.ErrNormalizer(utils.ErrorPair{Message: utils.CommitErr, Err: err})
 	}
 
-	return createdCameraID, nil
+	return key, nil
 }
 
-func (c cameraRepo) Get(ctx context.Context, cameraID int) (models.Camera, error) {
+func (c cameraRepo) Get(ctx context.Context, cameraID string) (models.Camera, error) {
 	var camera models.Camera
 	var coords string
 	var latitude, longitude float64
@@ -82,7 +101,7 @@ func (c cameraRepo) Get(ctx context.Context, cameraID int) (models.Camera, error
 	return camera, nil
 }
 
-func (c cameraRepo) Delete(ctx context.Context, cameraID int) error {
+func (c cameraRepo) Delete(ctx context.Context, cameraID string) error {
 	tx, err := c.db.Beginx()
 	if err != nil {
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})

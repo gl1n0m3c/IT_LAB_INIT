@@ -51,11 +51,11 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 	specRepo := repository.InitSpecialistsRepo(db)
 	ctx := context.Background()
 
-	// Create test
+	// CreateCase test
 	for _, specialistCase := range testcaseSpecialistCreate {
 		id, err := specRepo.Create(ctx, specialistCase)
 		if err != nil {
-			t.Errorf("Create error: %v", err)
+			t.Errorf("CreateCase error: %v", err)
 			continue
 		}
 
@@ -120,11 +120,11 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 
 	}
 
-	// Delete test
+	// DeleteCase test
 	for _, id := range createdIDs {
 		err := specRepo.Delete(ctx, id)
 		if err != nil {
-			t.Errorf("Delete error: %v", err)
+			t.Errorf("DeleteCase error: %v", err)
 			continue
 		}
 	}

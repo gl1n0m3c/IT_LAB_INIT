@@ -24,7 +24,7 @@ func (v violationRepo) Create(violations []models.Violation) (int, error) {
 		return 0, err
 	}
 
-	cameraQueue := `INSERT INTO violation (id, type, amount)
+	cameraQueue := `INSERT INTO violations (id, type, amount)
 					VALUES ($1, $2, $3)`
 
 	for i, violation := range violations {

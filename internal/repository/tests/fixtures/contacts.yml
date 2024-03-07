@@ -1,0 +1,14 @@
+- transport: "A123BC97"
+  contacts: '{"email": "example1@mail.com", "id_vk": "123123123", "Номер телефона": "79031234567"}'
+
+- transport: "B234CD98"
+  contacts: '{"email": "example2@mail.com", "id_vk": "234234234", "Номер телефона": "79032345678"}'
+
+- transport: "C345DE99"
+  contacts: '{"email": "example3@mail.com", "id_vk": "345345345", "Номер телефона": "79033456789"}'
+
+- transport: "D456EF00"
+  contacts: '{"email": "example4@mail.com", "id_vk": "456456456", "Номер телефона": "79034567890"}'
+
+- transport: "E567FG01"
+  contacts: '{"email": "example5@mail.com", "id_vk": "567567567", "Номер телефона": "79035678901"}'

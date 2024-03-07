@@ -64,7 +64,7 @@ type CaseDataType3 struct {
 	Camera    CameraInfo    `json:"camera"`
 	Violation ViolationInfo `json:"violation"`
 	Skill     int           `json:"skill"`
-	Datetime  string        `json:"datetime"`
+	Datetime  int           `json:"datetime"`
 }
 
 func (c CaseDataType1) CameraDataToCaseBase() (models.CaseBase, error) {
@@ -122,11 +122,7 @@ func (c CaseDataType2) CameraDataToCaseBase() (models.CaseBase, error) {
 func (c CaseDataType3) CameraDataToCaseBase() (models.CaseBase, error) {
 	var caseData models.CaseBase
 
-	parsedTime, err := time.Parse(time.RFC3339, c.Datetime)
-	if err != nil {
-		return models.CaseBase{}, fmt.Errorf("Недопустимый тип времени")
-	}
-	parsedTime = parsedTime.UTC()
+	parsedTime := time.Unix(int64(c.Datetime), 0).UTC()
 
 	caseData.CameraID = c.Camera.ID
 	caseData.Transport = c.Transport

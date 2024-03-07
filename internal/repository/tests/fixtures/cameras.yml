@@ -1,0 +1,24 @@
+- id: "c70a6f9c-cb9b-4cd9-9425-77e8c8a5b072"
+  type: "camerus1"
+  description: "Outdoor dome camera"
+  coordinates: "51.5074,-0.1278"
+
+- id: "d95a3f0c-cb9b-4cd9-9425-77e8c8a5b072"
+  type: "camerus1"
+  description: "Indoor bullet camera"
+  coordinates: "40.7128,-74.0060"
+
+- id: "a85a4f9c-cb9b-4cd9-9425-77e8c8a5b072"
+  type: "camerus2"
+  description: "Pan tilt zoom camera for large areas"
+  coordinates: "34.0522,-118.2437"
+
+- id: "b60a6f9c-cb9b-4cd9-9425-77e8c8a5b072"
+  type: "camerus2"
+  description: "Cylindrical camera for outdoor use"
+  coordinates: "48.8566,2.3522"
+
+- id: "e70a6f9c-cb9b-4cd9-9425-77e8c8a5b072"
+  type: "camerus3"
+  description: "Second outdoor dome camera"
+  coordinates: "55.7558,37.6173"

@@ -45,16 +45,16 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateGetDeleteCameras(t *testing.T) {
-	var createdIDs []int
+	var createdIDs []string
 
 	cameraRepo := repository.InitCameraRepo(db)
 	ctx := context.Background()
 
-	// Create test
+	// CreateCase test
 	for _, cameraCase := range testcaseCameraCreate {
 		id, err := cameraRepo.Create(ctx, cameraCase)
 		if err != nil {
-			t.Errorf("Create error: %v", err)
+			t.Errorf("CreateCase error: %v", err)
 			continue
 		}
 
@@ -74,11 +74,11 @@ func TestCreateGetDeleteCameras(t *testing.T) {
 		assert.Equal(t, testcaseCameraCreate[i].Description, camera.Description, "Compare PhotoUrl")
 	}
 
-	// Delete test
+	// DeleteCase test
 	for _, id := range createdIDs {
 		err := cameraRepo.Delete(ctx, id)
 		if err != nil {
-			t.Errorf("Delete error: %v", err)
+			t.Errorf("DeleteCase error: %v", err)
 			continue
 		}
 	}

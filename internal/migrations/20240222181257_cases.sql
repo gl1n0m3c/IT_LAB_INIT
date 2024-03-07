@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS rated_cases (
     id SERIAL PRIMARY KEY,
     specialist_id INTEGER NOT NULL,
     case_id INTEGER NOT NULL,
-    choice BOOLEAN,
+    choice BOOLEAN NOT NULL,
     date DATE NOT NULL,
-    status status_type NOT NULL
+    status status_type DEFAULT('Unknown') NOT NULL
 );
 
 ALTER TABLE cases
@@ -28,7 +28,7 @@ ALTER TABLE cases
     ADD CONSTRAINT fk_transport
         FOREIGN KEY (transport) REFERENCES contacts(transport) ON DELETE CASCADE,
     ADD CONSTRAINT fk_violation
-        FOREIGN KEY (violation_id) REFERENCES violation(id) ON DELETE CASCADE;
+        FOREIGN KEY (violation_id) REFERENCES violations(id) ON DELETE CASCADE;
 
 ALTER TABLE rated_cases
     ADD CONSTRAINT fk_specialist

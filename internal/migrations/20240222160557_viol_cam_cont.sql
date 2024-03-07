@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE IF NOT EXISTS violation (
+CREATE TABLE IF NOT EXISTS violations (
     id VARCHAR UNIQUE PRIMARY KEY,
     type VARCHAR UNIQUE NOT NULL,
     amount REAL NOT NULL
@@ -21,5 +21,5 @@ CREATE TABLE IF NOT EXISTS contacts (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS violation, cameras, contacts;
+DROP TABLE IF EXISTS violations, cameras, contacts;
 -- +goose StatementEnd

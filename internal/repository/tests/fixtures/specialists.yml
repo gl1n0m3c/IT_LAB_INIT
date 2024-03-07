@@ -1,0 +1,39 @@
+- id: 1
+  login: "user1"
+  hashed_password: "hashedpassword1"
+  fullname: "User One"
+  level: 1
+  photo_url: "http://example.com/photo1.jpg"
+  is_verified: true
+
+- id: 2
+  login: "user2"
+  hashed_password: "hashedpassword2"
+  fullname: "User Two"
+  level: 2
+  photo_url: "http://example.com/photo2.jpg"
+  is_verified: false
+
+- id: 3
+  login: "user3"
+  hashed_password: "hashedpassword3"
+  fullname: "User Three"
+  level: 3
+  photo_url: "http://example.com/photo3.jpg"
+  is_verified: true
+
+- id: 4
+  login: "user4"
+  hashed_password: "hashedpassword4"
+  fullname: "User Four"
+  level: 4
+  photo_url: "http://example.com/photo4.jpg"
+  is_verified: false
+
+- id: 5
+  login: "user5"
+  hashed_password: "hashedpassword5"
+  fullname: "User Five"
+  level: 5
+  photo_url: "http://example.com/photo5.jpg"
+  is_verified: true

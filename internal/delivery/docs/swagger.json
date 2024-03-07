@@ -32,7 +32,7 @@
                     "201": {
                         "description": "Successful creation, returning camera ID",
                         "schema": {
-                            "$ref": "#/definitions/responses.CreationResponse"
+                            "$ref": "#/definitions/responses.CreationStringResponse"
                         }
                     },
                     "400": {
@@ -124,7 +124,7 @@
                     "201": {
                         "description": "Successful creation, returning case ID",
                         "schema": {
-                            "$ref": "#/definitions/responses.CreationResponse"
+                            "$ref": "#/definitions/responses.CreationIntResponse"
                         }
                     },
                     "400": {
@@ -305,6 +305,205 @@
                     }
                 }
             }
+        },
+        "/specialist/create_rated": {
+            "post": {
+                "description": "Creates a new rating entry based on the provided data.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "specialists"
+                ],
+                "parameters": [
+                    {
+                        "description": "Rated data",
+                        "name": "rated_data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RatedCreate"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created the rating",
+                        "schema": {
+                            "$ref": "#/definitions/responses.CreationIntResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "JWT is invalid or expired",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/specialist/get_rated_solved": {
+            "get": {
+                "description": "Retrieves a rated solved entry based on the provided cursor ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "specialists"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cursor ID for pagination",
+                        "name": "cursor_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved the rated solved",
+                        "schema": {
+                            "$ref": "#/definitions/models.RatedCursor"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "JWT is invalid or expired",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/specialist/update_rated_status": {
+            "put": {
+                "description": "Updates the status of a rated entry based on the provided Rated ID and sets it to the new status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "specialists"
+                ],
+                "parameters": [
+                    {
+                        "description": "Rated update information",
+                        "name": "rated_update",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RatedUpdate"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated the rated status"
+                    },
+                    "400": {
+                        "description": "Invalid input data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "JWT is invalid or expired",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -330,6 +529,77 @@
                 }
             }
         },
+        "models.Rated": {
+            "type": "object",
+            "required": [
+                "case_id",
+                "choice"
+            ],
+            "properties": {
+                "case_id": {
+                    "type": "integer"
+                },
+                "choice": {
+                    "type": "boolean"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "specialist_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RatedCreate": {
+            "type": "object",
+            "required": [
+                "case_id",
+                "choice"
+            ],
+            "properties": {
+                "case_id": {
+                    "type": "integer"
+                },
+                "choice": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "models.RatedCursor": {
+            "type": "object",
+            "properties": {
+                "cursor": {
+                    "$ref": "#/definitions/null.Int"
+                },
+                "rated": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Rated"
+                    }
+                }
+            }
+        },
+        "models.RatedUpdate": {
+            "type": "object",
+            "required": [
+                "case_id",
+                "status"
+            ],
+            "properties": {
+                "case_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "models.SpecialistLogin": {
             "type": "object",
             "required": [
@@ -345,11 +615,31 @@
                 }
             }
         },
-        "responses.CreationResponse": {
+        "null.Int": {
+            "type": "object",
+            "properties": {
+                "int64": {
+                    "type": "integer"
+                },
+                "valid": {
+                    "description": "Valid is true if Int64 is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
+        "responses.CreationIntResponse": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "integer"
+                }
+            }
+        },
+        "responses.CreationStringResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
                 }
             }
         },
