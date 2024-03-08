@@ -14,6 +14,7 @@ import (
 )
 
 type publicService struct {
+	managerRepo    repository.Managers
 	specialistRepo repository.Specialists
 	cameraRepo     repository.Cameras
 	caseRepo       repository.Cases
@@ -22,12 +23,14 @@ type publicService struct {
 }
 
 func InitPublicService(
+	managerRepo repository.Managers,
 	specialistRepo repository.Specialists,
 	cameraRepo repository.Cameras,
 	caseRepo repository.Cases,
 	logger *log.Logs,
 ) Public {
 	return publicService{
+		managerRepo:    managerRepo,
 		specialistRepo: specialistRepo,
 		cameraRepo:     cameraRepo,
 		caseRepo:       caseRepo,
@@ -48,6 +51,21 @@ func (p publicService) SpecialistRegister(ctx context.Context, specialist models
 
 	p.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessCreate, "specialist", createdSpecialistID))
 	return createdSpecialistID, nil
+}
+
+func (p publicService) ManagerLogin(ctx context.Context, manager models.ManagerBase) (bool, models.Manager, error) {
+	ctx, cansel := context.WithTimeout(ctx, p.dbResponseTime)
+	defer cansel()
+
+	managerData, err := p.managerRepo.GetByLogin(ctx, manager.Login)
+	if err != nil {
+		p.logger.ErrorLogger.Error().Msg(err.Error())
+		return false, models.Manager{}, err
+	}
+
+	isCompare := utils.ComparePassword(managerData.Password, manager.Password)
+
+	return isCompare, managerData, nil
 }
 
 func (p publicService) SpecialistLogin(ctx context.Context, specialist models.SpecialistLogin) (bool, models.Specialist, error) {

@@ -16,12 +16,15 @@ import (
 func InitPublicRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Session, JWTUtil jwt.JWT, logger *log.Logs) {
 	CasesPerRequest := viper.GetInt(config.CasesPerRequest)
 
+	managerRepo := repository.InitManagerRepo(db)
 	specialistRepo := repository.InitSpecialistsRepo(db)
 	cameraRepo := repository.InitCameraRepo(db)
 	caseRepo := repository.InitCaseRepo(db, CasesPerRequest)
 
-	publicService := services.InitPublicService(specialistRepo, cameraRepo, caseRepo, logger)
+	publicService := services.InitPublicService(managerRepo, specialistRepo, cameraRepo, caseRepo, logger)
 	publicHandler := handlers.InitPublicHandler(publicService, session, JWTUtil)
+
+	group.POST("/manager_login", publicHandler.ManagerLogin)
 
 	group.POST("/specialist_register", publicHandler.SpecialistRegister)
 	group.POST("/specialist_login", publicHandler.SpecialistLogin)

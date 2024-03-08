@@ -40,6 +40,64 @@ func InitPublicHandler(
 	}
 }
 
+// ManagerLogin logs in a manager and returns a JWT and refresh token upon successful login.
+// @Summary Manager Login
+// @Description Logs in a specialist and returns a JWT and refresh token upon successful login.
+// @Tags public
+// @Accept json
+// @Produce json
+// @Param specialist body models.ManagerBase true "Manager Login"
+// @Success 201 {object} responses.JWTRefresh "Successful login, returning JWT and refresh token"
+// @Failure 400 {object} responses.MessageResponse "Invalid input or incorrect password / login"
+// @Failure 500 {object} responses.MessageResponse "Internal server error"
+// @Router /public/manager_login [post]
+func (p publicHandler) ManagerLogin(c *gin.Context) {
+	var manager models.ManagerBase
+
+	ctx := c.Request.Context()
+
+	if err := c.ShouldBindJSON(&manager); err != nil {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(fmt.Sprintf(responses.Response400, err)))
+		return
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(manager); err != nil {
+		customErrMsg := validators.CustomErrorMessage(err)
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
+		return
+	}
+
+	success, specialistData, err := p.service.ManagerLogin(ctx, manager)
+	if err != nil {
+		if err == customErrors.NoRowsLoginErr {
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+
+	if !success {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse("Неверный пароль"))
+		return
+	}
+
+	accessToken := p.JWTUtil.CreateToken(specialistData.ID, jwt.Manager)
+
+	refreshToken, err := p.session.Set(ctx, database.SessionData{
+		UserID:   specialistData.ID,
+		UserType: jwt.Manager,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+	}
+
+	c.JSON(http.StatusCreated, responses.NewJWTRefreshResponse(accessToken, refreshToken))
+}
+
 // SpecialistRegister registers a new specialist, uploads their photo, and returns a jwt and refresh token upon successful registration.
 // @Summary Specialist Registration with Photo Upload
 // @Description Registers a new specialist, uploads their photo, and returns a jwt and refresh token upon successful registration.
@@ -81,7 +139,7 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 	}
 
 	if file, err := c.FormFile("photo"); err != nil {
-		if err == http.ErrMissingFile {
+		if errors.Is(err, http.ErrMissingFile) {
 			specialist.PhotoUrl = null.NewString("", false)
 		} else {
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
@@ -361,8 +419,6 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, responses.CreationIntResponse{ID: createdCaseID})
 }
-
-func (p publicHandler) CaseDelete(c *gin.Context) {}
 
 // Refresh updates access and refresh tokens
 // @Summary Refresh Tokens

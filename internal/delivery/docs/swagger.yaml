@@ -14,6 +14,44 @@ definitions:
     - description
     - type
     type: object
+  models.Case:
+    properties:
+      camera_id:
+        type: string
+      datetime:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      photo_url:
+        type: string
+      transport:
+        type: string
+      violation_id:
+        type: string
+      violation_value:
+        type: string
+    type: object
+  models.CaseCursor:
+    properties:
+      cases:
+        items:
+          $ref: '#/definitions/models.Case'
+        type: array
+      cursor:
+        $ref: '#/definitions/null.Int'
+    type: object
+  models.ManagerBase:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    required:
+    - login
+    - password
+    type: object
   models.Rated:
     properties:
       case_id:
@@ -30,7 +68,6 @@ definitions:
         type: string
     required:
     - case_id
-    - choice
     type: object
   models.RatedCreate:
     properties:
@@ -40,7 +77,6 @@ definitions:
         type: boolean
     required:
     - case_id
-    - choice
     type: object
   models.RatedCursor:
     properties:
@@ -51,15 +87,25 @@ definitions:
           $ref: '#/definitions/models.Rated'
         type: array
     type: object
-  models.RatedUpdate:
+  models.Specialist:
     properties:
-      case_id:
+      fullname:
+        $ref: '#/definitions/null.String'
+      id:
         type: integer
-      status:
+      isVerified:
+        type: boolean
+      level:
+        type: integer
+      login:
         type: string
+      password:
+        type: string
+      photoUrl:
+        $ref: '#/definitions/null.String'
     required:
-    - case_id
-    - status
+    - login
+    - password
     type: object
   models.SpecialistLogin:
     properties:
@@ -77,6 +123,14 @@ definitions:
         type: integer
       valid:
         description: Valid is true if Int64 is not NULL
+        type: boolean
+    type: object
+  null.String:
+    properties:
+      string:
+        type: string
+      valid:
+        description: Valid is true if String is not NULL
         type: boolean
     type: object
   responses.CreationIntResponse:
@@ -194,6 +248,37 @@ paths:
           schema:
             $ref: '#/definitions/responses.MessageResponse'
       summary: Case Creation
+      tags:
+      - public
+  /public/manager_login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a specialist and returns a JWT and refresh token upon successful
+        login.
+      parameters:
+      - description: Manager Login
+        in: body
+        name: specialist
+        required: true
+        schema:
+          $ref: '#/definitions/models.ManagerBase'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successful login, returning JWT and refresh token
+          schema:
+            $ref: '#/definitions/responses.JWTRefresh'
+        "400":
+          description: Invalid input or incorrect password / login
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      summary: Manager Login
       tags:
       - public
   /public/refresh:
@@ -337,21 +422,59 @@ paths:
         "400":
           description: Invalid input data
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
         "403":
           description: JWT is invalid or expired
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
+      tags:
+      - specialists
+  /specialist/get_cases_by_level:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves cases based on the provided cursor ID and the user's
+        ID. It returns cases that match the level of difficulty or rating specified
+        for the user.
+      parameters:
+      - description: Cursor ID for pagination
+        in: query
+        name: cursor_id
+        required: true
+        type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved the cases by level
+          schema:
+            $ref: '#/definitions/models.CaseCursor'
+        "400":
+          description: Invalid input data or bad query parameter
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "401":
+          description: JWT is invalid or expired
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "403":
+          description: User is unverified
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
       tags:
       - specialists
   /specialist/get_rated_solved:
@@ -381,36 +504,24 @@ paths:
         "400":
           description: Invalid input data
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
         "401":
           description: JWT is invalid or expired
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
       tags:
       - specialists
-  /specialist/update_rated_status:
-    put:
+  /specialist/me:
+    get:
       consumes:
       - application/json
-      description: Updates the status of a rated entry based on the provided Rated
-        ID and sets it to the new status.
+      description: Retrieves information about the current specialist based on their
+        user ID.
       parameters:
-      - description: Rated update information
-        in: body
-        name: rated_update
-        required: true
-        schema:
-          $ref: '#/definitions/models.RatedUpdate'
       - default: Bearer <Add access token here>
         description: Insert your access token
         in: header
@@ -421,25 +532,68 @@ paths:
       - application/json
       responses:
         "200":
-          description: Successfully updated the rated status
+          description: Successfully retrieved the specialist info
+          schema:
+            $ref: '#/definitions/models.Specialist'
         "400":
           description: Invalid input data
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
         "401":
           description: JWT is invalid or expired
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/responses.MessageResponse'
+      tags:
+      - specialists
+  /specialist/update:
+    put:
+      consumes:
+      - multipart/form-data
+      description: |-
+        Updates an existing specialist's information including their password, full name, and photo.
+        The password must be more than 8 symbols and contain at least one number, one uppercase, and one lowercase letter.
+        The photo upload is optional but must be a valid image file if provided.
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: authorization
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        type: string
+      - description: Full Name
+        in: formData
+        name: fullname
+        type: string
+      - description: Photo Upload
+        in: formData
+        name: photo
+        type: file
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Successful update, no content returned
+        "400":
+          description: Invalid input data
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "401":
+          description: JWT is invalid or expired
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error, could not process the request
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      summary: Update Specialist Information with Photo Upload
       tags:
       - specialists
 swagger: "2.0"

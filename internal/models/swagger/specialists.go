@@ -17,7 +17,3 @@ type Specialist struct {
 	Level      int  `json:"level"`
 	IsVerified bool `json:"isVerified"`
 }
-
-type SpecialistUpdate struct {
-	Specialist
-}

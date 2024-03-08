@@ -31,7 +31,7 @@ type CaseCursor struct {
 
 type RatedCreate struct {
 	CaseID int  `json:"case_id" db:"case_id" validate:"required"`
-	Choice bool `json:"choice" db:"choice" validate:"required"`
+	Choice bool `json:"choice" db:"choice"`
 }
 
 type RatedUpdate struct {

@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS rated_cases (
     case_id INTEGER NOT NULL,
     choice BOOLEAN NOT NULL,
     date DATE NOT NULL,
-    status status_type DEFAULT('Unknown') NOT NULL
+    status status_type DEFAULT('Unknown') NOT NULL,
+    UNIQUE(specialist_id, case_id)
 );
 
 ALTER TABLE cases

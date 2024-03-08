@@ -23,7 +23,10 @@ type Specialist struct {
 }
 
 type SpecialistUpdate struct {
-	Specialist
+	ID       int    `json:"id" db:"id"`
+	Password string `json:"password" db:"hashed_password" validate:"password"`
+	FullName string `json:"full_name" db:"fullname"`
+	PhotoUrl string `json:"photo_url" db:"photo_url"`
 }
 
 type SpecialistLogin struct {

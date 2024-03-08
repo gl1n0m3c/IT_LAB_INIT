@@ -98,13 +98,15 @@ func (s specialistsRepo) GetByLogin(ctx context.Context, specialistLogin string)
 	return specialist, nil
 }
 
-func (s specialistsRepo) Update(ctx context.Context, specialistUpdate models.SpecialistUpdate) error {
+func (s specialistsRepo) Update(ctx context.Context, specialistUpdate models.Specialist, newPasswordFlag bool) error {
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
 
-	specialistUpdate.Password = string(utils.HashPassword(specialistUpdate.Password))
+	if newPasswordFlag {
+		specialistUpdate.Password = string(utils.HashPassword(specialistUpdate.Password))
+	}
 
 	specialistUpdateQuery := `UPDATE specialists
 							  SET login = :login, hashed_password = :hashed_password, fullname = :fullname, level = :level, photo_url = :photo_url, is_verified = :is_verified

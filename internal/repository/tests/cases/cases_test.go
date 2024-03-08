@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/repository"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/repository/tests"
 	"github.com/go-testfixtures/testfixtures/v3"
@@ -36,17 +37,17 @@ func TestMain(m *testing.M) {
 
 	db, err = sqlx.Connect("postgres", connectionString)
 	if err != nil {
-		log.Fatalf("Could not connect to the test database: %v", err)
+		log.Fatalf("Could not connect to the tests database: %v", err)
 	}
 
 	fixtures, err := testfixtures.New(
 		testfixtures.Database(db.DB),
 		testfixtures.Dialect("postgres"),
 		testfixtures.Paths(
-			"../fixtures/cameras.yml",
-			"../fixtures/specialists.yml",
-			"../fixtures/violations.yml",
-			"../fixtures/contacts.yml",
+			"../../../fixtures/cameras.yml",
+			"../../../fixtures/specialists.yml",
+			"../../../fixtures/violations.yml",
+			"../../../fixtures/contacts.yml",
 		),
 	)
 	if err != nil {
@@ -66,7 +67,7 @@ func TestMain(m *testing.M) {
 
 	err = db.Close()
 	if err != nil {
-		log.Fatalf("Could not close the test database: %v", err)
+		log.Fatalf("Could not close the tests database: %v", err)
 	}
 
 	os.Exit(code)
@@ -145,7 +146,10 @@ func TestCreateGetDeleteCasesRated(t *testing.T) {
 
 	// Update rated status
 	for _, id := range createdRatedIDs {
-		err := caseRepo.UpdateRatedStatus(ctx, id, "Correct")
+		err := caseRepo.UpdateRatedStatus(ctx, models.RatedUpdate{
+			CaseID: id,
+			Status: "Correct",
+		})
 		if err != nil {
 			t.Errorf(err.Error())
 		}

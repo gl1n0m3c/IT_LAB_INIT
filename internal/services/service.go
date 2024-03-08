@@ -6,6 +6,8 @@ import (
 )
 
 type Public interface {
+	ManagerLogin(ctx context.Context, manager models.ManagerBase) (bool, models.Manager, error)
+
 	SpecialistRegister(ctx context.Context, specialist models.SpecialistCreate) (int, error)
 	SpecialistLogin(ctx context.Context, specialist models.SpecialistLogin) (bool, models.Specialist, error)
 
@@ -17,7 +19,12 @@ type Public interface {
 }
 
 type Specialists interface {
+	GetMe(ctx context.Context, specialistID int) (models.Specialist, error)
+	UpdateMe(ctx context.Context, specialistUpdate models.SpecialistUpdate) error
+
+	GetCasesByLevel(ctx context.Context, specialistID, cursor int) (models.CaseCursor, error)
+
 	CreateRated(ctx context.Context, rated models.RatedBase) (int, error)
-	GetRatedSolved(ctx context.Context, cursor int) (models.RatedCursor, error)
-	UpdateRatedStatus(ctx context.Context, newRated models.RatedUpdate) error
+	GetRatedSolved(ctx context.Context, specialistID, cursor int) (models.RatedCursor, error)
+	UpdateRatedStatus(ctx context.Context, specialistID int, newRated models.RatedUpdate) error
 }

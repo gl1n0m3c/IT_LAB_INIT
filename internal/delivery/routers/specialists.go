@@ -15,12 +15,17 @@ import (
 func InitSpecialistsRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Session, logger *log.Logs) {
 	CasesPerRequest := viper.GetInt(config.CasesPerRequest)
 
+	specialistRepo := repository.InitSpecialistsRepo(db)
 	caseRepo := repository.InitCaseRepo(db, CasesPerRequest)
 
-	specialistService := services.InitSpecialistService(caseRepo, logger)
+	specialistService := services.InitSpecialistService(specialistRepo, caseRepo, logger)
 	specialistHandler := handlers.InitSpecialistsHandler(specialistService, session)
+
+	group.GET("/me", specialistHandler.GetMe)
+	group.PUT("/update", specialistHandler.UpdateMe)
+
+	group.GET("/get_cases_by_level", specialistHandler.GetCasesByLevel)
 
 	group.POST("/create_rated", specialistHandler.CreateRated)
 	group.GET("/get_rated_solved", specialistHandler.GetRatedSolved)
-	group.PUT("/update_rated_status", specialistHandler.UpdateRatedStatus)
 }

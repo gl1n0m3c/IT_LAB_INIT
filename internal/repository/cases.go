@@ -2,11 +2,14 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
 	"github.com/guregu/null"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type caseRepo struct {
@@ -55,6 +58,26 @@ func (c caseRepo) CreateCase(ctx context.Context, caseData models.CaseBase) (int
 	}
 
 	return createdCaseID, nil
+}
+
+func (c caseRepo) GetCaseByID(ctx context.Context, caseID int) (models.Case, error) {
+	var caseData models.Case
+
+	caseGetQuery := `SELECT id, camera_id, transport, violation_id,violation_value, level, datetime, photo_url
+					 FROM cases
+					 WHERE id=$1;`
+
+	err := c.db.GetContext(ctx, &caseData, caseGetQuery, caseID)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return models.Case{}, customErrors.NoRowsCaseErr
+		default:
+			return models.Case{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
+	}
+
+	return caseData, nil
 }
 
 func (c caseRepo) GetCasesByLevel(ctx context.Context, level, cursor int) (models.CaseCursor, error) {
@@ -153,6 +176,10 @@ func (c caseRepo) CreateRated(ctx context.Context, rated models.RatedBase) (int,
 			)
 		}
 
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return 0, customErrors.UniqueRatedErr
+		}
+
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 	}
 
@@ -168,9 +195,11 @@ func (c caseRepo) GetRatedSolved(ctx context.Context, cursor int) (models.RatedC
 	var nextCursor null.Int
 	var casesWithCursor models.RatedCursor
 
-	casesGetQueue := `SELECT id, specialist_id, case_id, choice, date, status
-					  FROM rated_cases WHERE status != 'Unknown' AND id > $1
-					  ORDER BY id LIMIT $2;`
+	casesGetQueue := `SELECT DISTINCT ON (case_id) id, specialist_id, case_id, choice, date, status
+					  FROM rated_cases
+					  WHERE status != 'Unknown' AND id > $1
+					  ORDER BY case_id, id
+					  LIMIT $2;`
 
 	err := c.db.SelectContext(ctx, &rated, casesGetQueue, cursor, c.CasesPerRequest+1)
 	if err != nil {

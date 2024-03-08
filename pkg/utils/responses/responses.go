@@ -16,7 +16,6 @@ const (
 	ResponseBadByteString = "Байтовая строка некорректна"
 
 	ResponseBadQuery = "Параметры запроса указаны некорректно"
-	ResponseBadBody  = "Тело запроса составлено некорректно"
 
 	ResponseSuccessDelete = "Объект %s с id %d был успешно удален"
 )

@@ -1,20 +1,11 @@
 package models
 
-type managerBase struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-}
-
-type ManagerCreate struct {
-	managerBase
+type ManagerBase struct {
+	Login    string `json:"login" db:"login" validate:"required"`
+	Password string `json:"password" db:"hashed_password" validate:"required"`
 }
 
 type Manager struct {
-	managerBase
-	ID int `json:"id"`
-}
-
-type ManagerUpdate struct {
-	ManagerCreate
-	ID int `json:"id"`
+	ManagerBase
+	ID int `json:"id" db:"id"`
 }

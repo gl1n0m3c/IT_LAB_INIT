@@ -3,6 +3,8 @@ package handlers
 import "github.com/gin-gonic/gin"
 
 type Public interface {
+	ManagerLogin(c *gin.Context)
+
 	SpecialistRegister(c *gin.Context)
 	SpecialistLogin(c *gin.Context)
 
@@ -15,7 +17,11 @@ type Public interface {
 }
 
 type Specialists interface {
+	GetMe(c *gin.Context)
+	UpdateMe(c *gin.Context)
+
+	GetCasesByLevel(c *gin.Context)
+
 	CreateRated(c *gin.Context)
 	GetRatedSolved(c *gin.Context)
-	UpdateRatedStatus(c *gin.Context)
 }

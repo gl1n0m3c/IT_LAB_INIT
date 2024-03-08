@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 
 	db, err = sqlx.Connect("postgres", connectionString)
 	if err != nil {
-		log.Fatalf("Could not connect to the test database: %v", err)
+		log.Fatalf("Could not connect to the tests database: %v", err)
 	}
 
 	code := m.Run()
@@ -50,7 +50,7 @@ func TestCreateGetDeleteCameras(t *testing.T) {
 	cameraRepo := repository.InitCameraRepo(db)
 	ctx := context.Background()
 
-	// CreateCase test
+	// CreateCase tests
 	for _, cameraCase := range testcaseCameraCreate {
 		id, err := cameraRepo.Create(ctx, cameraCase)
 		if err != nil {
@@ -61,7 +61,7 @@ func TestCreateGetDeleteCameras(t *testing.T) {
 		createdIDs = append(createdIDs, id)
 	}
 
-	// Get test
+	// Get tests
 	for i, id := range createdIDs {
 		camera, err := cameraRepo.Get(ctx, id)
 		if err != nil {
@@ -74,7 +74,7 @@ func TestCreateGetDeleteCameras(t *testing.T) {
 		assert.Equal(t, testcaseCameraCreate[i].Description, camera.Description, "Compare PhotoUrl")
 	}
 
-	// DeleteCase test
+	// DeleteCase tests
 	for _, id := range createdIDs {
 		err := cameraRepo.Delete(ctx, id)
 		if err != nil {

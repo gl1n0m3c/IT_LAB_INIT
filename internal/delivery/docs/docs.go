@@ -153,6 +153,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/public/manager_login": {
+            "post": {
+                "description": "Logs in a specialist and returns a JWT and refresh token upon successful login.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Manager Login",
+                "parameters": [
+                    {
+                        "description": "Manager Login",
+                        "name": "specialist",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ManagerBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successful login, returning JWT and refresh token",
+                        "schema": {
+                            "$ref": "#/definitions/responses.JWTRefresh"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or incorrect password / login",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/public/refresh": {
             "post": {
                 "security": [
@@ -358,28 +404,82 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid input data",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     },
                     "403": {
                         "description": "JWT is invalid or expired",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/specialist/get_cases_by_level": {
+            "get": {
+                "description": "Retrieves cases based on the provided cursor ID and the user's ID. It returns cases that match the level of difficulty or rating specified for the user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "specialists"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Cursor ID for pagination",
+                        "name": "cursor_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved the cases by level",
+                        "schema": {
+                            "$ref": "#/definitions/models.CaseCursor"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input data or bad query parameter",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "JWT is invalid or expired",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "User is unverified",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     }
                 }
@@ -424,36 +524,27 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid input data",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "JWT is invalid or expired",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     }
                 }
             }
         },
-        "/specialist/update_rated_status": {
-            "put": {
-                "description": "Updates the status of a rated entry based on the provided Rated ID and sets it to the new status.",
+        "/specialist/me": {
+            "get": {
+                "description": "Retrieves information about the current specialist based on their user ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -465,15 +556,6 @@ const docTemplate = `{
                 ],
                 "parameters": [
                     {
-                        "description": "Rated update information",
-                        "name": "rated_update",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.RatedUpdate"
-                        }
-                    },
-                    {
                         "type": "string",
                         "default": "Bearer \u003cAdd access token here\u003e",
                         "description": "Insert your access token",
@@ -484,33 +566,93 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully updated the rated status"
+                        "description": "Successfully retrieved the specialist info",
+                        "schema": {
+                            "$ref": "#/definitions/models.Specialist"
+                        }
                     },
                     "400": {
                         "description": "Invalid input data",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "JWT is invalid or expired",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/specialist/update": {
+            "put": {
+                "description": "Updates an existing specialist's information including their password, full name, and photo.\nThe password must be more than 8 symbols and contain at least one number, one uppercase, and one lowercase letter.\nThe photo upload is optional but must be a valid image file if provided.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "specialists"
+                ],
+                "summary": "Update Specialist Information with Photo Upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Full Name",
+                        "name": "fullname",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Photo Upload",
+                        "name": "photo",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful update, no content returned"
+                    },
+                    "400": {
+                        "description": "Invalid input data",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "JWT is invalid or expired",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error, could not process the request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
                         }
                     }
                 }
@@ -540,11 +682,68 @@ const docTemplate = `{
                 }
             }
         },
+        "models.Case": {
+            "type": "object",
+            "properties": {
+                "camera_id": {
+                    "type": "string"
+                },
+                "datetime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "transport": {
+                    "type": "string"
+                },
+                "violation_id": {
+                    "type": "string"
+                },
+                "violation_value": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CaseCursor": {
+            "type": "object",
+            "properties": {
+                "cases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Case"
+                    }
+                },
+                "cursor": {
+                    "$ref": "#/definitions/null.Int"
+                }
+            }
+        },
+        "models.ManagerBase": {
+            "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Rated": {
             "type": "object",
             "required": [
-                "case_id",
-                "choice"
+                "case_id"
             ],
             "properties": {
                 "case_id": {
@@ -570,8 +769,7 @@ const docTemplate = `{
         "models.RatedCreate": {
             "type": "object",
             "required": [
-                "case_id",
-                "choice"
+                "case_id"
             ],
             "properties": {
                 "case_id": {
@@ -596,18 +794,33 @@ const docTemplate = `{
                 }
             }
         },
-        "models.RatedUpdate": {
+        "models.Specialist": {
             "type": "object",
             "required": [
-                "case_id",
-                "status"
+                "login",
+                "password"
             ],
             "properties": {
-                "case_id": {
+                "fullname": {
+                    "$ref": "#/definitions/null.String"
+                },
+                "id": {
                     "type": "integer"
                 },
-                "status": {
+                "isVerified": {
+                    "type": "boolean"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "login": {
                     "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "photoUrl": {
+                    "$ref": "#/definitions/null.String"
                 }
             }
         },
@@ -634,6 +847,18 @@ const docTemplate = `{
                 },
                 "valid": {
                     "description": "Valid is true if Int64 is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
+        "null.String": {
+            "type": "object",
+            "properties": {
+                "string": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if String is not NULL",
                     "type": "boolean"
                 }
             }

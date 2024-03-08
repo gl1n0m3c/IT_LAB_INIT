@@ -5,11 +5,16 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 )
 
+type Managers interface {
+	Create(ctx context.Context, manager models.ManagerBase) (int, error)
+	GetByLogin(ctx context.Context, managerLogin string) (models.Manager, error)
+}
+
 type Specialists interface {
 	Create(ctx context.Context, specialist models.SpecialistCreate) (int, error)
 	GetByID(ctx context.Context, specialistID int) (models.Specialist, error)
 	GetByLogin(ctx context.Context, specialistLogin string) (models.Specialist, error)
-	Update(ctx context.Context, specialistUpdate models.SpecialistUpdate) error
+	Update(ctx context.Context, specialistUpdate models.Specialist, newPasswordFlag bool) error
 	Delete(ctx context.Context, specialistID int) error
 }
 
@@ -21,6 +26,7 @@ type Cameras interface {
 
 type Cases interface {
 	CreateCase(ctx context.Context, caseData models.CaseBase) (int, error)
+	GetCaseByID(ctx context.Context, caseID int) (models.Case, error)
 	GetCasesByLevel(ctx context.Context, level, cursor int) (models.CaseCursor, error)
 	DeleteCase(ctx context.Context, caseID int) error
 

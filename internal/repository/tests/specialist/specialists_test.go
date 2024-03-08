@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 
 	db, err = sqlx.Connect("postgres", connectionString)
 	if err != nil {
-		log.Fatalf("Could not connect to the test database: %v", err)
+		log.Fatalf("Could not connect to the tests database: %v", err)
 	}
 
 	code := m.Run()
@@ -51,7 +51,7 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 	specRepo := repository.InitSpecialistsRepo(db)
 	ctx := context.Background()
 
-	// CreateCase test
+	// CreateCase tests
 	for _, specialistCase := range testcaseSpecialistCreate {
 		id, err := specRepo.Create(ctx, specialistCase)
 		if err != nil {
@@ -62,7 +62,7 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 		createdIDs = append(createdIDs, id)
 	}
 
-	// GetByID test
+	// GetByID tests
 	for i, id := range createdIDs {
 		specialist, err := specRepo.GetByID(ctx, id)
 		if err != nil {
@@ -78,7 +78,7 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 		assert.Equal(t, true, utils.ComparePassword(specialist.Password, testcaseSpecialistCreate[i].Password), "Compare Password")
 	}
 
-	// GetByLogin test
+	// GetByLogin tests
 	for i, spec := range testcaseSpecialistCreate {
 		specialist, err := specRepo.GetByLogin(ctx, spec.Login)
 		if err != nil {
@@ -94,7 +94,7 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 		assert.Equal(t, true, utils.ComparePassword(specialist.Password, testcaseSpecialistCreate[i].Password), "Compare Password")
 	}
 
-	// Update test
+	// Update tests
 	for i, id := range createdIDs {
 		testcaseSpecialistUpdate[i].ID = id
 
@@ -120,7 +120,7 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 
 	}
 
-	// DeleteCase test
+	// DeleteCase tests
 	for _, id := range createdIDs {
 		err := specRepo.Delete(ctx, id)
 		if err != nil {
