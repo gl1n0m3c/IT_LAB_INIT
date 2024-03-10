@@ -93,7 +93,7 @@ func (c caseRepo) GetCasesByLevel(ctx context.Context, level, cursor int) (model
 
 	err := c.db.SelectContext(ctx, &cases, casesGetQueue, level, cursor, c.CasesPerRequest+1)
 	if err != nil {
-		return models.CaseCursor{}, err
+		return models.CaseCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
 	}
 
 	if len(cases) == c.CasesPerRequest+1 {

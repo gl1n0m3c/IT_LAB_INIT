@@ -72,23 +72,19 @@ func (s specialistsHandler) CreateRated(c *gin.Context) {
 
 	createdRatedID, err := s.service.CreateRated(ctx, rated)
 	if err != nil {
-		switch err {
-		case customErrors.UserUnverified:
+		switch {
+		case errors.Is(err, customErrors.UserUnverified):
 			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
 			return
-
-		case customErrors.NoRowsCaseErr:
+		case errors.Is(err, customErrors.NoRowsCaseErr):
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
-
-		case customErrors.UniqueRatedErr:
+		case errors.Is(err, customErrors.UniqueRatedErr):
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
-
-		case customErrors.NoRowsSpecialistIDErr:
+		case errors.Is(err, customErrors.NoRowsSpecialistIDErr):
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
-
 		default:
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
@@ -130,19 +126,13 @@ func (s specialistsHandler) GetCasesByLevel(c *gin.Context) {
 
 	cases, err := s.service.GetCasesByLevel(ctx, userID, cursor)
 	if err != nil {
-		switch err {
-		case customErrors.UserUnverified:
+		switch {
+		case errors.Is(err, customErrors.UserUnverified):
 			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
 			return
-
-		case customErrors.NoRowsSpecialistIDErr:
+		case errors.Is(err, customErrors.NoRowsSpecialistIDErr):
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
-
-		case customErrors.NoRowsSpecialistIDErr:
-			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
-			return
-
 		default:
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
@@ -183,15 +173,13 @@ func (s specialistsHandler) GetRatedSolved(c *gin.Context) {
 
 	ratedCursor, err := s.service.GetRatedSolved(ctx, userID, cursor)
 	if err != nil {
-		switch err {
-		case customErrors.UserUnverified:
+		switch {
+		case errors.Is(err, customErrors.UserUnverified):
 			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
 			return
-
-		case customErrors.NoRowsSpecialistIDErr:
-			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
+		case errors.Is(err, customErrors.NoRowsSpecialistIDErr):
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
-
 		default:
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return

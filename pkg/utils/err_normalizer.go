@@ -10,6 +10,7 @@ const (
 	RollbackErr    = "rollback error: %v"
 	CommitErr      = "commit error: %v"
 	ScanErr        = "scan error: %v"
+	QueryRrr       = "query error: %v"
 	ExecErr        = "execution error: %v"
 	RowsErr        = "rows error: %v"
 
