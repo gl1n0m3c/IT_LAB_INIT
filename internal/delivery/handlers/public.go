@@ -70,7 +70,7 @@ func (p publicHandler) ManagerLogin(c *gin.Context) {
 
 	success, specialistData, err := p.service.ManagerLogin(ctx, manager)
 	if err != nil {
-		if err == customErrors.NoRowsLoginErr {
+		if err == customErrors.NoRowsSpecialistLoginErr {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
 		}
@@ -226,7 +226,7 @@ func (p publicHandler) SpecialistLogin(c *gin.Context) {
 
 	success, specialistData, err := p.service.SpecialistLogin(ctx, specialistLogin)
 	if err != nil {
-		if err == customErrors.NoRowsLoginErr {
+		if errors.Is(err, customErrors.NoRowsSpecialistLoginErr) {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
 		}
@@ -426,8 +426,7 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 // @Tags public
 // @Accept json
 // @Produce json
-// @Security ApiKeyAuth
-// @Param Refresh header string true "Refresh Token"
+// @Param refresh header string true "Refresh Token"
 // @Success 200 {object} responses.JWTRefresh "Successful token refresh, returning new jwt and refresh token"
 // @Failure 400 {object} responses.MessageResponse "No refresh token provided"
 // @Failure 401 {object} responses.MessageResponse "Invalid or expired refresh token"

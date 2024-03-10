@@ -98,7 +98,7 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 	for i, id := range createdIDs {
 		testcaseSpecialistUpdate[i].ID = id
 
-		err := specRepo.Update(ctx, testcaseSpecialistUpdate[i])
+		err := specRepo.Update(ctx, testcaseSpecialistUpdate[i], true)
 		if err != nil {
 			t.Errorf("Update error: %v", err)
 			continue

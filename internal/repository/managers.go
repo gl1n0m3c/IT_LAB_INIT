@@ -66,7 +66,7 @@ func (m managerRepo) GetByLogin(ctx context.Context, managerLogin string) (model
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			return models.Manager{}, customErrors.NoRowsLoginErr
+			return models.Manager{}, customErrors.NoRowsSpecialistLoginErr
 		default:
 			return models.Manager{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 		}

@@ -74,14 +74,21 @@ func (s specialistsHandler) CreateRated(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErrors.UserUnverified:
-			c.JSON(http.StatusForbidden, responses.NewMessageResponse(customErrors.UserUnverified.Error()))
+			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
 			return
+
 		case customErrors.NoRowsCaseErr:
-			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrors.NoRowsCaseErr.Error()))
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
+
 		case customErrors.UniqueRatedErr:
-			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrors.UniqueRatedErr.Error()))
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
+
+		case customErrors.NoRowsSpecialistIDErr:
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+			return
+
 		default:
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
@@ -125,11 +132,17 @@ func (s specialistsHandler) GetCasesByLevel(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErrors.UserUnverified:
-			c.JSON(http.StatusForbidden, responses.NewMessageResponse(customErrors.UserUnverified.Error()))
+			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
 			return
-		case customErrors.NoRowsIDErr:
-			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrors.UserUnverified.Error()))
+
+		case customErrors.NoRowsSpecialistIDErr:
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
+
+		case customErrors.NoRowsSpecialistIDErr:
+			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
+			return
+
 		default:
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
@@ -172,8 +185,13 @@ func (s specialistsHandler) GetRatedSolved(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErrors.UserUnverified:
-			c.JSON(http.StatusForbidden, responses.NewMessageResponse(customErrors.UserUnverified.Error()))
+			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
 			return
+
+		case customErrors.NoRowsSpecialistIDErr:
+			c.JSON(http.StatusForbidden, responses.NewMessageResponse(err.Error()))
+			return
+
 		default:
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
@@ -201,6 +219,10 @@ func (s specialistsHandler) GetMe(c *gin.Context) {
 
 	specialist, err := s.service.GetMe(ctx, userID)
 	if err != nil {
+		if errors.Is(err, customErrors.NoRowsSpecialistIDErr) {
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
@@ -226,6 +248,11 @@ func (s specialistsHandler) GetMe(c *gin.Context) {
 // @Failure 500 {object} responses.MessageResponse "Internal server error, could not process the request"
 // @Router /specialist/update [put]
 func (s specialistsHandler) UpdateMe(c *gin.Context) {
+	if c.Request.ContentLength == 0 {
+		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(fmt.Sprintf(responses.Response400, "no data provided")))
+		return
+	}
+
 	var updateSpecialistData models.SpecialistUpdate
 
 	ctx := c.Request.Context()
@@ -234,12 +261,14 @@ func (s specialistsHandler) UpdateMe(c *gin.Context) {
 	updateSpecialistData.Password = c.PostForm("password")
 	updateSpecialistData.FullName = c.PostForm("fullname")
 
-	validate := validator.New()
-	_ = validate.RegisterValidation("password", validators.ValidatePassword)
-	if err := validate.Struct(updateSpecialistData); err != nil {
-		customErrMsg := validators.CustomErrorMessage(err)
-		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
-		return
+	if updateSpecialistData.Password != "" {
+		validate := validator.New()
+		_ = validate.RegisterValidation("password", validators.ValidatePassword)
+		if err := validate.Struct(updateSpecialistData); err != nil {
+			customErrMsg := validators.CustomErrorMessage(err)
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
+			return
+		}
 	}
 
 	if file, err := c.FormFile("photo"); err != nil {
@@ -279,6 +308,10 @@ func (s specialistsHandler) UpdateMe(c *gin.Context) {
 
 	err := s.service.UpdateMe(ctx, updateSpecialistData)
 	if err != nil {
+		if errors.Is(err, customErrors.NoRowsSpecialistIDErr) {
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}

@@ -201,11 +201,6 @@ const docTemplate = `{
         },
         "/public/refresh": {
             "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Refreshes access and refresh tokens using a refresh token provided in the Authorization header.",
                 "consumes": [
                     "application/json"
@@ -221,7 +216,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Refresh Token",
-                        "name": "Refresh",
+                        "name": "refresh",
                         "in": "header",
                         "required": true
                     }

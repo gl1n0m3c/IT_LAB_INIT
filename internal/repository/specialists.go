@@ -69,7 +69,7 @@ func (s specialistsRepo) GetByID(ctx context.Context, specialistID int) (models.
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			return models.Specialist{}, customErrors.NoRowsLoginErr
+			return models.Specialist{}, customErrors.NoRowsSpecialistIDErr
 		default:
 			return models.Specialist{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 		}
@@ -89,7 +89,7 @@ func (s specialistsRepo) GetByLogin(ctx context.Context, specialistLogin string)
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			return models.Specialist{}, customErrors.NoRowsLoginErr
+			return models.Specialist{}, customErrors.NoRowsSpecialistLoginErr
 		default:
 			return models.Specialist{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 		}

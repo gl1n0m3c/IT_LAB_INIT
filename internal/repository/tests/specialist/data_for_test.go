@@ -40,66 +40,62 @@ var (
 			PhotoUrl: null.NewString("", false), // PhotoUrl отсутствует
 		},
 	}
-	testcaseSpecialistUpdate = []models.SpecialistUpdate{
+	testcaseSpecialistUpdate = []models.Specialist{
 		{
-			Specialist: models.Specialist{
-				SpecialistCreate: models.SpecialistCreate{
-					SpecialistBase: models.SpecialistBase{
-						Login:    "testlogin1",
-						Password: "testpassword1",
-						Fullname: null.NewString("Олег Брахмагуптович", true),
-					},
-					PhotoUrl: null.NewString("testurl1", true),
+			SpecialistCreate: models.SpecialistCreate{
+				SpecialistBase: models.SpecialistBase{
+					Login:    "testlogin1",
+					Password: "testpassword1",
+					Fullname: null.NewString("Олег Брахмагуптович", true),
 				},
-				ID:         -1,
-				Level:      1,
-				IsVerified: true,
+				PhotoUrl: null.NewString("testurl1", true),
 			},
+			ID:         -1,
+			Level:      1,
+			IsVerified: true,
+		},
+
+		{
+			SpecialistCreate: models.SpecialistCreate{
+				SpecialistBase: models.SpecialistBase{
+					Login:    "testlogin2",
+					Password: "testpassword2",
+					Fullname: null.NewString("", false), // Fullname отсутствует
+				},
+				PhotoUrl: null.NewString("testurl2", true),
+			},
+			ID:         -1,
+			Level:      2,
+			IsVerified: true,
 		},
 		{
-			Specialist: models.Specialist{
-				SpecialistCreate: models.SpecialistCreate{
-					SpecialistBase: models.SpecialistBase{
-						Login:    "testlogin2",
-						Password: "testpassword2",
-						Fullname: null.NewString("", false), // Fullname отсутствует
-					},
-					PhotoUrl: null.NewString("testurl2", true),
+
+			SpecialistCreate: models.SpecialistCreate{
+				SpecialistBase: models.SpecialistBase{
+					Login:    "testlogin3",
+					Password: "testpassword3",
+					Fullname: null.NewString("Иван Иванович", true),
 				},
-				ID:         -1,
-				Level:      2,
-				IsVerified: true,
+				PhotoUrl: null.NewString("", false), // PhotoUrl отсутствует
 			},
+			ID:         -1,
+			Level:      1,    // Примерное значение, адаптируйте под ваши нужды
+			IsVerified: true, // Примерное значение, адаптируйте под ваши нужды
 		},
+
 		{
-			Specialist: models.Specialist{
-				SpecialistCreate: models.SpecialistCreate{
-					SpecialistBase: models.SpecialistBase{
-						Login:    "testlogin3",
-						Password: "testpassword3",
-						Fullname: null.NewString("Иван Иванович", true),
-					},
-					PhotoUrl: null.NewString("", false), // PhotoUrl отсутствует
+
+			SpecialistCreate: models.SpecialistCreate{
+				SpecialistBase: models.SpecialistBase{
+					Login:    "testlogin4",
+					Password: "testpassword4",
+					Fullname: null.NewString("", false), // Fullname отсутствует
 				},
-				ID:         -1,
-				Level:      1,    // Примерное значение, адаптируйте под ваши нужды
-				IsVerified: true, // Примерное значение, адаптируйте под ваши нужды
+				PhotoUrl: null.NewString("", false), // PhotoUrl отсутствует
 			},
-		},
-		{
-			Specialist: models.Specialist{
-				SpecialistCreate: models.SpecialistCreate{
-					SpecialistBase: models.SpecialistBase{
-						Login:    "testlogin4",
-						Password: "testpassword4",
-						Fullname: null.NewString("", false), // Fullname отсутствует
-					},
-					PhotoUrl: null.NewString("", false), // PhotoUrl отсутствует
-				},
-				ID:         -1,
-				Level:      0,
-				IsVerified: false,
-			},
+			ID:         -1,
+			Level:      0,
+			IsVerified: false,
 		},
 	}
 )

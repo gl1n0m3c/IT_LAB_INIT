@@ -290,7 +290,7 @@ paths:
       parameters:
       - description: Refresh Token
         in: header
-        name: Refresh
+        name: refresh
         required: true
         type: string
       produces:
@@ -312,8 +312,6 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/responses.MessageResponse'
-      security:
-      - ApiKeyAuth: []
       summary: Refresh Tokens
       tags:
       - public
