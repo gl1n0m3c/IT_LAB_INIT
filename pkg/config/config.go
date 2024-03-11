@@ -8,6 +8,10 @@ import (
 )
 
 const (
+	K               = "K"
+	J               = "J"
+	ReportingPeriod = "REPORTING_PERIOD"
+
 	DBName     = "DB_NAME"
 	DBUser     = "DB_USER"
 	DBPassword = "DB_PASSWORD"

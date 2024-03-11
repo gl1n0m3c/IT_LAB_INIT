@@ -55,3 +55,20 @@ type RatedCursor struct {
 	Rated  []Rated  `json:"rated"`
 	Cursor null.Int `json:"cursor"`
 }
+
+type RatedCover struct {
+	ID     int       `json:"id"`
+	Status string    `json:"status"`
+	Date   time.Time `json:"date"`
+	SpecialistCover
+}
+
+type CaseFul struct {
+	Violation
+	Transport      string       `json:"transport"`
+	ViolationValue string       `json:"violation_value"`
+	Level          int          `json:"level"`
+	Datetime       time.Time    `json:"datetime" `
+	PhotoUrl       string       `json:"photo_url"`
+	RatedCovers    []RatedCover `json:"rated_covers"`
+}

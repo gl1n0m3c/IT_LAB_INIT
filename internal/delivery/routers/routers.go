@@ -10,11 +10,14 @@ import (
 )
 
 func InitRouting(r *gin.Engine, db *sqlx.DB, session database.Session, JWTUtil jwt.JWT, middleware middleware.Middleware, logger *log.Logs) {
+	managerGroup := r.Group("/manager")
 	publicGroup := r.Group("/public")
 	specialistsGroup := r.Group("/specialist")
 
 	specialistsGroup.Use(middleware.Authorization(jwt.Specialist))
+	managerGroup.Use(middleware.Authorization(jwt.Manager))
 
+	InitManagersRouting(managerGroup, db, logger)
 	InitPublicRouting(publicGroup, db, session, JWTUtil, logger)
 	InitSpecialistsRouting(specialistsGroup, db, session, logger)
 }

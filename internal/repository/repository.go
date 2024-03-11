@@ -27,12 +27,14 @@ type Cameras interface {
 type Cases interface {
 	CreateCase(ctx context.Context, caseData models.CaseBase) (int, error)
 	GetCaseByID(ctx context.Context, caseID int) (models.Case, error)
-	GetCasesByLevel(ctx context.Context, level, cursor int) (models.CaseCursor, error)
+	GetCasesByLevel(ctx context.Context, specialistID, level, cursor int) (models.CaseCursor, error)
 	DeleteCase(ctx context.Context, caseID int) error
 
 	CreateRated(ctx context.Context, rated models.RatedBase) (int, error)
 	GetRatedSolved(ctx context.Context, cursor int) (models.RatedCursor, error)
 	UpdateRatedStatus(ctx context.Context, newRated models.RatedUpdate) error
+
+	GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFul, error)
 }
 
 type Violations interface {

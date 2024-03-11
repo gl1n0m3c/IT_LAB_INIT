@@ -15,6 +15,63 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/manager/get_case/{case_id}": {
+            "get": {
+                "description": "Retrieves a case by its ID and returns detailed information about the case.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "managers"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the case to retrieve",
+                        "name": "case_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved the case details",
+                        "schema": {
+                            "$ref": "#/definitions/models.CaseFul"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameter or missing case_id",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "JWT is invalid or expired",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/public/camera_create": {
             "post": {
                 "description": "Creates a new camera and returns its ID upon successful creation.",
@@ -720,6 +777,38 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CaseFul": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "datetime": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "rated_covers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.RatedCover"
+                    }
+                },
+                "transport": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "violation_value": {
+                    "type": "string"
+                }
+            }
+        },
         "models.ManagerBase": {
             "type": "object",
             "required": [
@@ -755,6 +844,29 @@ const docTemplate = `{
                 },
                 "specialist_id": {
                     "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RatedCover": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "fullname": {
+                    "$ref": "#/definitions/null.String"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "photo_url": {
+                    "$ref": "#/definitions/null.String"
                 },
                 "status": {
                     "type": "string"

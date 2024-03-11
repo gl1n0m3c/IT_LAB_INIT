@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
 	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
@@ -64,8 +65,8 @@ func (m managerRepo) GetByLogin(ctx context.Context, managerLogin string) (model
 
 	err := m.db.GetContext(ctx, &manager, managerGetQuery, managerLogin)
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
 			return models.Manager{}, customErrors.NoRowsSpecialistLoginErr
 		default:
 			return models.Manager{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})

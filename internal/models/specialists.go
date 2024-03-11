@@ -33,3 +33,10 @@ type SpecialistLogin struct {
 	Login    string `json:"login" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
+
+type SpecialistCover struct {
+	ID       int         `json:"id"`
+	Fullname null.String `json:"fullname"`
+	Level    int         `json:"level"`
+	PhotoUrl null.String `json:"photo_url"`
+}

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS rated_cases (
     specialist_id INTEGER NOT NULL,
     case_id INTEGER NOT NULL,
     choice BOOLEAN NOT NULL,
-    date DATE NOT NULL,
+    datetime TIMESTAMP WITH TIME ZONE NOT NULL,
     status status_type DEFAULT('Unknown') NOT NULL,
     UNIQUE(specialist_id, case_id)
 );

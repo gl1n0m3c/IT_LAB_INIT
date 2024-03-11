@@ -9,6 +9,7 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/database"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/log"
+	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/jwt"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -44,6 +45,10 @@ func main() {
 
 	routers.InitRouting(router, db, session, JWTUtil, middleWarrior, logger)
 	logger.InfoLogger.Info().Msg("Routing Initialized")
+
+	// Для загрузки тестовых данных
+	utils.LoadFixtures(db)
+	//utils.ClearDatabase(db)
 
 	if err := router.Run("0.0.0.0:8080"); err != nil {
 		panic(fmt.Sprintf("Failed to run client: %s", err.Error()))

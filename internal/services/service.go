@@ -5,6 +5,10 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 )
 
+type Managers interface {
+	GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFul, error)
+}
+
 type Public interface {
 	ManagerLogin(ctx context.Context, manager models.ManagerBase) (bool, models.Manager, error)
 

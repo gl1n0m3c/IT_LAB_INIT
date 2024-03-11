@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
@@ -87,8 +88,8 @@ func (c cameraRepo) Get(ctx context.Context, cameraID string) (models.Camera, er
 
 	err := c.db.QueryRowxContext(ctx, cameraGetQuery, cameraID).Scan(&camera.ID, &camera.Type, &camera.Description, &coords)
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
 			return models.Camera{}, customErrors.NoRowsCameraErr
 		default:
 			return models.Camera{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})

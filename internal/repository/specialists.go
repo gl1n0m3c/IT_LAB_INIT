@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
@@ -67,8 +68,8 @@ func (s specialistsRepo) GetByID(ctx context.Context, specialistID int) (models.
 
 	err := s.db.GetContext(ctx, &specialist, specialistGetQuery, specialistID)
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
 			return models.Specialist{}, customErrors.NoRowsSpecialistIDErr
 		default:
 			return models.Specialist{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
@@ -87,8 +88,8 @@ func (s specialistsRepo) GetByLogin(ctx context.Context, specialistLogin string)
 
 	err := s.db.GetContext(ctx, &specialist, specialistGetQuery, specialistLogin)
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
 			return models.Specialist{}, customErrors.NoRowsSpecialistLoginErr
 		default:
 			return models.Specialist{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})

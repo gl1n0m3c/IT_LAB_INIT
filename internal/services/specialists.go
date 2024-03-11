@@ -159,7 +159,7 @@ func (s specialistService) GetCasesByLevel(ctx context.Context, specialistID, cu
 	ctx, cansel := context.WithTimeout(ctx, s.dbResponseTime)
 	defer cansel()
 
-	cases, err := s.caseRepo.GetCasesByLevel(ctx, specialist.Level, cursor)
+	cases, err := s.caseRepo.GetCasesByLevel(ctx, specialist.ID, specialist.Level, cursor)
 
 	if err != nil {
 		s.logger.ErrorLogger.Error().Msg(err.Error())

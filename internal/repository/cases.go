@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
@@ -63,35 +64,35 @@ func (c caseRepo) CreateCase(ctx context.Context, caseData models.CaseBase) (int
 func (c caseRepo) GetCaseByID(ctx context.Context, caseID int) (models.Case, error) {
 	var caseData models.Case
 
-	caseGetQuery := `SELECT id, camera_id, transport, violation_id,violation_value, level, datetime, photo_url
+	caseGetQuery := `SELECT id, camera_id, transport, violation_id, violation_value, level, datetime, photo_url
 					 FROM cases
 					 WHERE id=$1;`
 
 	err := c.db.GetContext(ctx, &caseData, caseGetQuery, caseID)
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
 			return models.Case{}, customErrors.NoRowsCaseErr
 		default:
-			return models.Case{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+			return models.Case{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
 		}
 	}
 
 	return caseData, nil
 }
 
-func (c caseRepo) GetCasesByLevel(ctx context.Context, level, cursor int) (models.CaseCursor, error) {
+func (c caseRepo) GetCasesByLevel(ctx context.Context, specialistID, level, cursor int) (models.CaseCursor, error) {
 	var cases []models.Case
 	var nextCursor null.Int
 	var casesWithCursor models.CaseCursor
 
-	// TODO: запрашивать нужно только те кейсы, которые он еще не оценил
+	casesGetQueue := `SELECT c.id, c.camera_id, c.transport, c.violation_id, c.violation_value, c.level, c.datetime, c.photo_url
+					  FROM cases c
+					  LEFT JOIN rated_cases rc ON c.id = rc.case_id AND rc.specialist_id = $1
+					  WHERE c.level = $2 AND rc.id IS NULL AND c.id > $3
+					  ORDER BY id LIMIT $4;`
 
-	casesGetQueue := `SELECT id, camera_id, transport, violation_id, violation_value, level, datetime, photo_url
-					  FROM cases WHERE level = $1 AND id > $2
-					  ORDER BY id LIMIT $3;`
-
-	err := c.db.SelectContext(ctx, &cases, casesGetQueue, level, cursor, c.CasesPerRequest+1)
+	err := c.db.SelectContext(ctx, &cases, casesGetQueue, specialistID, level, cursor, c.CasesPerRequest+1)
 	if err != nil {
 		return models.CaseCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
 	}
@@ -162,7 +163,7 @@ func (c caseRepo) CreateRated(ctx context.Context, rated models.RatedBase) (int,
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
 
-	caseCreateQuery := `INSERT INTO rated_cases (specialist_id, case_id, choice, date, status)
+	caseCreateQuery := `INSERT INTO rated_cases (specialist_id, case_id, choice, datetime, status)
 						VALUES ($1, $2, $3, $4, $5)
 						RETURNING id;`
 
@@ -195,7 +196,7 @@ func (c caseRepo) GetRatedSolved(ctx context.Context, cursor int) (models.RatedC
 	var nextCursor null.Int
 	var casesWithCursor models.RatedCursor
 
-	casesGetQueue := `SELECT DISTINCT ON (case_id) id, specialist_id, case_id, choice, date, status
+	casesGetQueue := `SELECT DISTINCT ON (case_id) id, specialist_id, case_id, choice, datetime, status
 					  FROM rated_cases
 					  WHERE status != 'Unknown' AND id > $1
 					  ORDER BY case_id, id
@@ -203,7 +204,7 @@ func (c caseRepo) GetRatedSolved(ctx context.Context, cursor int) (models.RatedC
 
 	err := c.db.SelectContext(ctx, &rated, casesGetQueue, cursor, c.CasesPerRequest+1)
 	if err != nil {
-		return models.RatedCursor{}, err
+		return models.RatedCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 	}
 
 	if len(rated) == c.CasesPerRequest+1 {
@@ -262,4 +263,48 @@ func (c caseRepo) UpdateRatedStatus(ctx context.Context, newRated models.RatedUp
 	}
 
 	return nil
+}
+
+func (c caseRepo) GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFul, error) {
+	var caseFul models.CaseFul
+
+	caseGetQuery := `SELECT c.transport, v.type, v.amount, c.violation_value, c.level, c.datetime, c.photo_url,
+					        rc.id, rc.status, rc.datetime,
+					        s.id, s.fullname, s.level, s.photo_url
+					 FROM cases c
+					 LEFT JOIN rated_cases rc ON c.id = rc.case_id
+					 LEFT JOIN specialists s ON rc.specialist_id = s.id
+					 LEFT JOIN violation v ON c.violation_id = v.id
+					 WHERE c.id = $1`
+
+	rows, err := c.db.QueryxContext(ctx, caseGetQuery, caseID)
+	if err != nil {
+		return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
+	}
+
+	for rows.Next() {
+		var ratedCover models.RatedCover
+
+		err := rows.Scan(&caseFul.Transport, &caseFul.Violation.Type, &caseFul.Violation.Amount, &caseFul.ViolationValue,
+			&caseFul.Level, &caseFul.Datetime, &caseFul.PhotoUrl,
+			&ratedCover.ID, &ratedCover.Status, &ratedCover.Date,
+			&ratedCover.SpecialistCover.ID, &ratedCover.SpecialistCover.Fullname, &ratedCover.SpecialistCover.Level, &ratedCover.SpecialistCover.PhotoUrl)
+		if err != nil {
+			return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
+
+		caseFul.RatedCovers = append(caseFul.RatedCovers, ratedCover)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
+	}
+
+	if len(caseFul.RatedCovers) == 0 {
+		return models.CaseFul{}, customErrors.NoRowsCaseErr
+	}
+
+	return caseFul, nil
+
 }

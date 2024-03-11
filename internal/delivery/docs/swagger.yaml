@@ -42,6 +42,27 @@ definitions:
       cursor:
         $ref: '#/definitions/null.Int'
     type: object
+  models.CaseFul:
+    properties:
+      amount:
+        type: integer
+      datetime:
+        type: string
+      level:
+        type: integer
+      photo_url:
+        type: string
+      rated_covers:
+        items:
+          $ref: '#/definitions/models.RatedCover'
+        type: array
+      transport:
+        type: string
+      type:
+        type: string
+      violation_value:
+        type: string
+    type: object
   models.ManagerBase:
     properties:
       login:
@@ -68,6 +89,21 @@ definitions:
         type: string
     required:
     - case_id
+    type: object
+  models.RatedCover:
+    properties:
+      date:
+        type: string
+      fullname:
+        $ref: '#/definitions/null.String'
+      id:
+        type: integer
+      level:
+        type: integer
+      photo_url:
+        $ref: '#/definitions/null.String'
+      status:
+        type: string
     type: object
   models.RatedCreate:
     properties:
@@ -158,6 +194,45 @@ definitions:
 info:
   contact: {}
 paths:
+  /manager/get_case/{case_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a case by its ID and returns detailed information about
+        the case.
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: authorization
+        required: true
+        type: string
+      - description: ID of the case to retrieve
+        in: path
+        name: case_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved the case details
+          schema:
+            $ref: '#/definitions/models.CaseFul'
+        "400":
+          description: Invalid query parameter or missing case_id
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "403":
+          description: JWT is invalid or expired
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      tags:
+      - managers
   /public/camera_create:
     post:
       consumes:

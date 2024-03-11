@@ -2,6 +2,10 @@ package handlers
 
 import "github.com/gin-gonic/gin"
 
+type Managers interface {
+	GetFulCaseByID(c *gin.Context)
+}
+
 type Public interface {
 	ManagerLogin(c *gin.Context)
 

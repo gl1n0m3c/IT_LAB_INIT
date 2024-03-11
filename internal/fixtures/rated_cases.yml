@@ -1,0 +1,112 @@
+- id: 1
+  specialist_id: 1
+  case_id: 1
+  choice: true
+  datetime: 2023-04-01
+  status: Correct
+
+- id: 2
+  specialist_id: 1
+  case_id: 2
+  choice: false
+  datetime: 2023-04-01
+  status: Incorrect
+
+- id: 3
+  specialist_id: 1
+  case_id: 3
+  choice: true
+  datetime: 2023-04-01
+  status: Unknown
+
+- id: 4
+  specialist_id: 1
+  case_id: 5
+  choice: false
+  datetime: 2023-04-01
+  status: Unknown
+
+- id: 5
+  specialist_id: 2
+  case_id: 1
+  choice: false
+  datetime: 2023-04-01
+  status: Unknown
+
+- id: 6
+  specialist_id: 2
+  case_id: 2
+  choice: true
+  datetime: 2023-04-01
+  status: Correct
+
+- id: 7
+  specialist_id: 2
+  case_id: 3
+  choice: false
+  datetime: 2023-04-01
+  status: Unknown
+
+- id: 8
+  specialist_id: 2
+  case_id: 4
+  choice: true
+  datetime: 2023-04-01
+  status: Incorrect
+
+- id: 9
+  specialist_id: 3
+  case_id: 1
+  choice: true
+  datetime: 2023-04-01
+  status: Unknown
+
+- id: 10
+  specialist_id: 3
+  case_id: 2
+  choice: false
+  datetime: 2023-04-01
+  status: Unknown
+
+- id: 11
+  specialist_id: 3
+  case_id: 4
+  choice: true
+  datetime: 2023-04-01
+  status: Correct
+
+- id: 12
+  specialist_id: 3
+  case_id: 5
+  choice: false
+  datetime: 2023-04-01
+  status: Incorrect
+
+- id: 13
+  specialist_id: 5
+  case_id: 2
+  choice: true
+  datetime: 2023-04-01
+  status: Unknown
+
+
+- id: 14
+  specialist_id: 5
+  case_id: 3
+  choice: false
+  datetime: 2023-04-01
+  status: Correct
+
+- id: 15
+  specialist_id: 5
+  case_id: 4
+  choice: true
+  datetime: 2023-04-01
+  status: Unknown
+
+- id: 16
+  specialist_id: 5
+  case_id: 5
+  choice: false
+  datetime: 2023-04-01
+  status: Incorrect

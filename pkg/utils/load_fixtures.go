@@ -17,6 +17,7 @@ func LoadFixtures(db *sqlx.DB) {
 			"../internal/fixtures/violations.yml",
 			"../internal/fixtures/contacts.yml",
 			"../internal/fixtures/cases.yml",
+			"../internal/fixtures/rated_cases.yml",
 		),
 	)
 
