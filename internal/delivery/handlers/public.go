@@ -10,7 +10,7 @@ import (
 	_ "github.com/gl1n0m3c/IT_LAB_INIT/internal/models/swagger"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/services"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/database"
-	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/jwt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/responses"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/validators"

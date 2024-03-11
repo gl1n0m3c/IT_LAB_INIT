@@ -94,13 +94,13 @@ func TestCreateGetUpdateDeleteSpecialist(t *testing.T) {
 		assert.Equal(t, true, utils.ComparePassword(specialist.Password, testcaseSpecialistCreate[i].Password), "Compare Password")
 	}
 
-	// Update tests
+	// UpdateMain tests
 	for i, id := range createdIDs {
 		testcaseSpecialistUpdate[i].ID = id
 
-		err := specRepo.Update(ctx, testcaseSpecialistUpdate[i], true)
+		err := specRepo.UpdateMain(ctx, testcaseSpecialistUpdate[i], true)
 		if err != nil {
-			t.Errorf("Update error: %v", err)
+			t.Errorf("UpdateMain error: %v", err)
 			continue
 		}
 

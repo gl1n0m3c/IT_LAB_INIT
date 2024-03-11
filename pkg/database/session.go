@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
-	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
 	"github.com/gofrs/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"

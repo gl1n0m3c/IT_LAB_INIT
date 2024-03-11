@@ -3,10 +3,12 @@ package services
 import (
 	"context"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
+	"time"
 )
 
 type Managers interface {
 	GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFul, error)
+	GetSpecialistRating(ctx context.Context, timeStart, timeEnd time.Time, cursor int) (models.RatingSpecialistCountCursor, error)
 }
 
 type Public interface {

@@ -123,6 +123,32 @@ definitions:
           $ref: '#/definitions/models.Rated'
         type: array
     type: object
+  models.RatingSpecialistCount:
+    properties:
+      correct:
+        type: integer
+      fullname:
+        $ref: '#/definitions/null.String'
+      id:
+        type: integer
+      level:
+        type: integer
+      photo_url:
+        $ref: '#/definitions/null.String'
+      total:
+        type: integer
+      unknown:
+        type: integer
+    type: object
+  models.RatingSpecialistCountCursor:
+    properties:
+      cursor:
+        $ref: '#/definitions/null.Int'
+      specialists:
+        items:
+          $ref: '#/definitions/models.RatingSpecialistCount'
+        type: array
+    type: object
   models.Specialist:
     properties:
       fullname:
@@ -194,7 +220,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /manager/get_case/{case_id}:
+  /manager/get_case:
     get:
       consumes:
       - application/json
@@ -208,7 +234,7 @@ paths:
         required: true
         type: string
       - description: ID of the case to retrieve
-        in: path
+        in: query
         name: case_id
         required: true
         type: integer
@@ -221,6 +247,54 @@ paths:
             $ref: '#/definitions/models.CaseFul'
         "400":
           description: Invalid query parameter or missing case_id
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "403":
+          description: JWT is invalid or expired
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      tags:
+      - managers
+  /manager/get_specialists_rating:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of specialists' ratings within a specified time
+        range, paginated by a cursor.
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: authorization
+        required: true
+        type: string
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: integer
+      - description: Start time for filtering ratings (inclusive), in RFC3339 format
+        in: query
+        name: time_from
+        required: true
+        type: string
+      - description: End time for filtering ratings (inclusive), in RFC3339 format
+        in: query
+        name: time_to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved the specialists' ratings
+          schema:
+            $ref: '#/definitions/models.RatingSpecialistCountCursor'
+        "400":
+          description: Invalid query parameter or missing required fields
           schema:
             $ref: '#/definitions/responses.MessageResponse'
         "403":
@@ -666,7 +740,7 @@ paths:
           description: Internal server error, could not process the request
           schema:
             $ref: '#/definitions/responses.MessageResponse'
-      summary: Update Specialist Information with Photo Upload
+      summary: UpdateMain Specialist Information with Photo Upload
       tags:
       - specialists
 swagger: "2.0"

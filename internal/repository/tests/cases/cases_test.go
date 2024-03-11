@@ -144,7 +144,7 @@ func TestCreateGetDeleteCasesRated(t *testing.T) {
 		}
 	}
 
-	// Update rated status
+	// UpdateMain rated status
 	for _, id := range createdRatedIDs {
 		err := caseRepo.UpdateRatedStatus(ctx, models.RatedUpdate{
 			CaseID: id,

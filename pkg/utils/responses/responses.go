@@ -14,6 +14,7 @@ const (
 	ResponseBadFileSize   = "Ваш файл слишком большой"
 	ResponseBadPhotoFile  = "Вы загрузили не фото"
 	ResponseBadByteString = "Байтовая строка некорректна"
+	ResponseBadTime       = "Переданное время некорректно"
 
 	ResponseBadQuery = "Параметры запроса указаны некорректно"
 

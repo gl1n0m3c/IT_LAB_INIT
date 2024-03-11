@@ -6,25 +6,26 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
+	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
-	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
 	"github.com/guregu/null"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/spf13/viper"
 )
 
 type caseRepo struct {
 	db              *sqlx.DB
-	CasesPerRequest int
+	casesPerRequest int
 }
 
 func InitCaseRepo(
 	db *sqlx.DB,
-	CasesPerRequest int,
 ) Cases {
 	return caseRepo{
 		db:              db,
-		CasesPerRequest: CasesPerRequest,
+		casesPerRequest: viper.GetInt(config.EntitiesPerRequest),
 	}
 }
 
@@ -92,12 +93,12 @@ func (c caseRepo) GetCasesByLevel(ctx context.Context, specialistID, level, curs
 					  WHERE c.level = $2 AND rc.id IS NULL AND c.id > $3
 					  ORDER BY id LIMIT $4;`
 
-	err := c.db.SelectContext(ctx, &cases, casesGetQueue, specialistID, level, cursor, c.CasesPerRequest+1)
+	err := c.db.SelectContext(ctx, &cases, casesGetQueue, specialistID, level, cursor, c.casesPerRequest+1)
 	if err != nil {
 		return models.CaseCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
 	}
 
-	if len(cases) == c.CasesPerRequest+1 {
+	if len(cases) == c.casesPerRequest+1 {
 		nextCursor = null.IntFrom(int64(cases[len(cases)-1].ID))
 		cases = cases[:len(cases)-1]
 	}
@@ -202,12 +203,12 @@ func (c caseRepo) GetRatedSolved(ctx context.Context, cursor int) (models.RatedC
 					  ORDER BY case_id, id
 					  LIMIT $2;`
 
-	err := c.db.SelectContext(ctx, &rated, casesGetQueue, cursor, c.CasesPerRequest+1)
+	err := c.db.SelectContext(ctx, &rated, casesGetQueue, cursor, c.casesPerRequest+1)
 	if err != nil {
 		return models.RatedCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 	}
 
-	if len(rated) == c.CasesPerRequest+1 {
+	if len(rated) == c.casesPerRequest+1 {
 		nextCursor = null.IntFrom(int64(rated[len(rated)-1].ID))
 		rated = rated[:len(rated)-1]
 	}

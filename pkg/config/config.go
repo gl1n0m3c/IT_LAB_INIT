@@ -28,7 +28,7 @@ const (
 	JWTExpire = "JWT_EXPIRE"
 	JWTSecret = "JWT_SECRET"
 
-	CasesPerRequest = "CASES_PER_REQUEST"
+	EntitiesPerRequest = "ENTITIES_PER_REQUEST"
 )
 
 func InitConfig() {

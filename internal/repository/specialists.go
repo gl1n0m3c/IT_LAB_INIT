@@ -6,19 +6,24 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
+	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
-	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
+	"github.com/guregu/null"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
+	"github.com/spf13/viper"
+	"time"
 )
 
 type specialistsRepo struct {
-	db *sqlx.DB
+	db                    *sqlx.DB
+	specialistsPerRequest int
 }
 
 func InitSpecialistsRepo(db *sqlx.DB) Specialists {
-	return specialistsRepo{db: db}
+	return specialistsRepo{db: db, specialistsPerRequest: viper.GetInt(config.EntitiesPerRequest)}
 }
 
 func (s specialistsRepo) Create(ctx context.Context, specialist models.SpecialistCreate) (int, error) {
@@ -99,7 +104,52 @@ func (s specialistsRepo) GetByLogin(ctx context.Context, specialistLogin string)
 	return specialist, nil
 }
 
-func (s specialistsRepo) Update(ctx context.Context, specialistUpdate models.Specialist, newPasswordFlag bool) error {
+func (s specialistsRepo) GetSpecialistRating(ctx context.Context, timeStart, timeEnd time.Time, cursor int) (models.RatingSpecialistCountCursor, error) {
+	var (
+		specialistsCursor models.RatingSpecialistCountCursor
+		specialists       []models.RatingSpecialistCount
+		nextCursor        null.Int
+	)
+
+	getRatingQuery := `SELECT s.id, s.fullname, s.level, s.photo_url,
+					          COUNT(rc.id) AS total_cases,
+					          COUNT(CASE WHEN rc.status = 'Correct' THEN 1 END) AS correct_cases,
+					          COUNT(CASE WHEN rc.status = 'Unknown' THEN 1 END) AS unknown_cases
+					   FROM specialists s
+					   LEFT JOIN rated_cases rc ON s.id = rc.specialist_id AND rc.datetime BETWEEN $1 AND $2
+					   WHERE s.id > $3
+					   GROUP BY s.id, s.login, s.fullname, s.level, s.photo_url, s.is_verified
+					   LIMIT $4;`
+
+	rows, err := s.db.QueryxContext(ctx, getRatingQuery, timeStart, timeEnd, cursor, s.specialistsPerRequest+1)
+	if err != nil {
+		return models.RatingSpecialistCountCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
+	}
+
+	for rows.Next() {
+		var ratingSpecialist models.RatingSpecialistCount
+
+		err := rows.Scan(&ratingSpecialist.ID, &ratingSpecialist.Fullname, &ratingSpecialist.Level, &ratingSpecialist.PhotoUrl,
+			&ratingSpecialist.Total, &ratingSpecialist.Correct, &ratingSpecialist.Unknown)
+		if err != nil {
+			return models.RatingSpecialistCountCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
+		}
+
+		specialists = append(specialists, ratingSpecialist)
+	}
+
+	if len(specialists) == s.specialistsPerRequest+1 {
+		nextCursor = null.IntFrom(int64(specialists[len(specialists)-1].ID))
+		specialists = specialists[:len(specialists)-1]
+	}
+
+	specialistsCursor.Specialists = specialists
+	specialistsCursor.Cursor = nextCursor
+
+	return specialistsCursor, nil
+}
+
+func (s specialistsRepo) UpdateMain(ctx context.Context, specialistUpdate models.Specialist, newPasswordFlag bool) error {
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})

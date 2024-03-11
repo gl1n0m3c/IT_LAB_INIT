@@ -8,7 +8,7 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/log"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
-	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/responses"
 	"github.com/guregu/null"
 	"github.com/spf13/viper"
@@ -86,7 +86,7 @@ func (s specialistService) UpdateMe(ctx context.Context, specialistUpdate models
 	updCtx, updCansel := context.WithTimeout(ctx, s.dbResponseTime)
 	defer updCansel()
 
-	err = s.specialistRepo.Update(updCtx, specialist, passwordFlag)
+	err = s.specialistRepo.UpdateMain(updCtx, specialist, passwordFlag)
 	if err != nil {
 		s.logger.ErrorLogger.Error().Msg(err.Error())
 		return err

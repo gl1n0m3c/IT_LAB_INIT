@@ -7,7 +7,7 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/services"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/database"
-	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/custom_errors"
+	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/responses"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/validators"
 	"github.com/go-playground/validator/v10"
@@ -219,7 +219,7 @@ func (s specialistsHandler) GetMe(c *gin.Context) {
 }
 
 // UpdateMe updates specialist information if it provides.
-// @Summary Update Specialist Information with Photo Upload
+// @Summary UpdateMain Specialist Information with Photo Upload
 // @Description Updates an existing specialist's information including their password, full name, and photo.
 // @Description The password must be more than 8 symbols and contain at least one number, one uppercase, and one lowercase letter.
 // @Description The photo upload is optional but must be a valid image file if provided.

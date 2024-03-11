@@ -4,6 +4,7 @@ import "github.com/gin-gonic/gin"
 
 type Managers interface {
 	GetFulCaseByID(c *gin.Context)
+	GetSpecialistRating(c *gin.Context)
 }
 
 type Public interface {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
+	"time"
 )
 
 type Managers interface {
@@ -14,7 +15,8 @@ type Specialists interface {
 	Create(ctx context.Context, specialist models.SpecialistCreate) (int, error)
 	GetByID(ctx context.Context, specialistID int) (models.Specialist, error)
 	GetByLogin(ctx context.Context, specialistLogin string) (models.Specialist, error)
-	Update(ctx context.Context, specialistUpdate models.Specialist, newPasswordFlag bool) error
+	GetSpecialistRating(ctx context.Context, timeStart, timeEnd time.Time, cursor int) (models.RatingSpecialistCountCursor, error)
+	UpdateMain(ctx context.Context, specialistUpdate models.Specialist, newPasswordFlag bool) error
 	Delete(ctx context.Context, specialistID int) error
 }
 

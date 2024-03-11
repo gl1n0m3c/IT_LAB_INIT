@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/manager/get_case/{case_id}": {
+        "/manager/get_case": {
             "get": {
                 "description": "Retrieves a case by its ID and returns detailed information about the case.",
                 "consumes": [
@@ -40,7 +40,7 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "ID of the case to retrieve",
                         "name": "case_id",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -53,6 +53,76 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid query parameter or missing case_id",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "JWT is invalid or expired",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/manager/get_specialists_rating": {
+            "get": {
+                "description": "Retrieves a list of specialists' ratings within a specified time range, paginated by a cursor.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "managers"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Cursor for pagination",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start time for filtering ratings (inclusive), in RFC3339 format",
+                        "name": "time_from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End time for filtering ratings (inclusive), in RFC3339 format",
+                        "name": "time_to",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved the specialists' ratings",
+                        "schema": {
+                            "$ref": "#/definitions/models.RatingSpecialistCountCursor"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameter or missing required fields",
                         "schema": {
                             "$ref": "#/definitions/responses.MessageResponse"
                         }
@@ -656,7 +726,7 @@ const docTemplate = `{
                 "tags": [
                     "specialists"
                 ],
-                "summary": "Update Specialist Information with Photo Upload",
+                "summary": "UpdateMain Specialist Information with Photo Upload",
                 "parameters": [
                     {
                         "type": "string",
@@ -897,6 +967,46 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Rated"
+                    }
+                }
+            }
+        },
+        "models.RatingSpecialistCount": {
+            "type": "object",
+            "properties": {
+                "correct": {
+                    "type": "integer"
+                },
+                "fullname": {
+                    "$ref": "#/definitions/null.String"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "photo_url": {
+                    "$ref": "#/definitions/null.String"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "unknown": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.RatingSpecialistCountCursor": {
+            "type": "object",
+            "properties": {
+                "cursor": {
+                    "$ref": "#/definitions/null.Int"
+                },
+                "specialists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.RatingSpecialistCount"
                     }
                 }
             }

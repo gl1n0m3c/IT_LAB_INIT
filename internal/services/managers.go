@@ -13,19 +13,22 @@ import (
 )
 
 type managerService struct {
-	caseRepo       repository.Cases
-	dbResponseTime time.Duration
-	logger         *log.Logs
+	caseRepo        repository.Cases
+	specialistsRepo repository.Specialists
+	dbResponseTime  time.Duration
+	logger          *log.Logs
 }
 
 func InitManagerService(
 	caseRepo repository.Cases,
+	specialistsRepo repository.Specialists,
 	logger *log.Logs,
 ) Managers {
 	return managerService{
-		caseRepo:       caseRepo,
-		dbResponseTime: time.Duration(viper.GetInt(config.DBResponseTime)) * time.Second,
-		logger:         logger,
+		caseRepo:        caseRepo,
+		specialistsRepo: specialistsRepo,
+		dbResponseTime:  time.Duration(viper.GetInt(config.DBResponseTime)) * time.Second,
+		logger:          logger,
 	}
 }
 
@@ -36,10 +39,25 @@ func (m managerService) GetFulCaseByID(ctx context.Context, caseID int) (models.
 	caseFulData, err := m.caseRepo.GetFulCaseByID(ctx, caseID)
 	if err != nil {
 		m.logger.ErrorLogger.Error().Msg(err.Error())
-		return caseFulData, err
+		return models.CaseFul{}, err
 	}
 
 	m.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessGet, "case_ful"))
 
 	return caseFulData, nil
+}
+
+func (m managerService) GetSpecialistRating(ctx context.Context, timeStart, timeEnd time.Time, cursor int) (models.RatingSpecialistCountCursor, error) {
+	ctx, cansel := context.WithTimeout(ctx, m.dbResponseTime)
+	defer cansel()
+
+	specialists, err := m.specialistsRepo.GetSpecialistRating(ctx, timeStart, timeEnd, cursor)
+	if err != nil {
+		m.logger.ErrorLogger.Error().Msg(err.Error())
+		return models.RatingSpecialistCountCursor{}, err
+	}
+
+	m.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessGet, "specialists_raiting"))
+
+	return specialists, nil
 }

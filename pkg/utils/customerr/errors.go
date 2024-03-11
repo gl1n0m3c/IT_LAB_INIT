@@ -1,4 +1,4 @@
-package custom_errors
+package customerr
 
 import "errors"
 
