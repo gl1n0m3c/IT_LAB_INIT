@@ -38,7 +38,7 @@ func InitManagerHandler(
 func (m managerHandler) GetFulCaseByID(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	caseIDStr, ok := c.GetQuery("cursor")
+	caseIDStr, ok := c.GetQuery("case_id")
 	if !ok {
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadQuery))
 		return

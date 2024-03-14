@@ -263,8 +263,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves a list of specialists' ratings within a specified time
-        range, paginated by a cursor.
+      description: |-
+        Retrieves a list of specialists ratings within a specified time range, paginated by a cursor.
+        Time example (2023-04-12T15:04:05Z - without time zone / 2023-04-12T15:04:05+07:00 - with time zone)
       parameters:
       - default: Bearer <Add access token here>
         description: Insert your access token

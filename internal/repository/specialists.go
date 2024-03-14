@@ -117,7 +117,7 @@ func (s specialistsRepo) GetSpecialistRating(ctx context.Context, timeStart, tim
 					          COUNT(CASE WHEN rc.status = 'Unknown' THEN 1 END) AS unknown_cases
 					   FROM specialists s
 					   LEFT JOIN rated_cases rc ON s.id = rc.specialist_id AND rc.datetime BETWEEN $1 AND $2
-					   WHERE s.id > $3
+					   WHERE s.id >= $3
 					   GROUP BY s.id, s.login, s.fullname, s.level, s.photo_url, s.is_verified
 					   LIMIT $4;`
 

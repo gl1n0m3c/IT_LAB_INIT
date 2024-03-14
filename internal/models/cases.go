@@ -24,9 +24,14 @@ type CaseUpdate struct {
 	Case
 }
 
+type CaseViolations struct {
+	Case
+	Violation
+}
+
 type CaseCursor struct {
-	Cases  []Case   `json:"cases"`
-	Cursor null.Int `json:"cursor"`
+	Cases  []CaseViolations `json:"cases"`
+	Cursor null.Int         `json:"cursor"`
 }
 
 type RatedCreate struct {
@@ -42,13 +47,18 @@ type RatedUpdate struct {
 type RatedBase struct {
 	RatedCreate
 	SpecialistID int       `json:"specialist_id" db:"specialist_id"`
-	Date         time.Time `json:"date" db:"date"`
+	Date         time.Time `json:"date" db:"datetime"`
 	Status       string    `json:"status" db:"status"`
 }
 
 type Rated struct {
 	RatedBase
-	ID int `json:"id"`
+	Violation
+	Level          int    `json:"level"`
+	PhotoUrl       string `json:"photo_url"`
+	CameraID       string `json:"camera_id"`
+	ViolationValue string `json:"violation_value"`
+	ID             int    `json:"id"`
 }
 
 type RatedCursor struct {

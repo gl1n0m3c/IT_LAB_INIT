@@ -96,6 +96,7 @@ func (s specialistsHandler) CreateRated(c *gin.Context) {
 
 // GetCasesByLevel @Summary Retrieves cases by level
 // @Description Retrieves cases based on the provided cursor ID and the user's ID. It returns cases that match the level of difficulty or rating specified for the user.
+// @Description Returned cursor can be only int or null. It depends on existence of cases.
 // @Tags specialists
 // @Accept  json
 // @Produce  json
@@ -139,7 +140,7 @@ func (s specialistsHandler) GetCasesByLevel(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusCreated, cases)
+	c.JSON(http.StatusOK, cases)
 }
 
 // GetRatedSolved @Summary Get rated solved
@@ -186,7 +187,7 @@ func (s specialistsHandler) GetRatedSolved(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusCreated, ratedCursor)
+	c.JSON(http.StatusOK, ratedCursor)
 }
 
 // GetMe @Summary Get specialist info

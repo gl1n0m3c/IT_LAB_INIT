@@ -83,14 +83,16 @@ func (c caseRepo) GetCaseByID(ctx context.Context, caseID int) (models.Case, err
 }
 
 func (c caseRepo) GetCasesByLevel(ctx context.Context, specialistID, level, cursor int) (models.CaseCursor, error) {
-	var cases []models.Case
+	var cases []models.CaseViolations
 	var nextCursor null.Int
 	var casesWithCursor models.CaseCursor
 
-	casesGetQueue := `SELECT c.id, c.camera_id, c.transport, c.violation_id, c.violation_value, c.level, c.datetime, c.photo_url
+	casesGetQueue := `SELECT c.id, c.camera_id, c.transport, c.violation_id, c.violation_value, c.level, c.datetime, c.photo_url,
+					  v.type, v.amount
 					  FROM cases c
+					  LEFT JOIN violations v ON c.violation_id = v.id
 					  LEFT JOIN rated_cases rc ON c.id = rc.case_id AND rc.specialist_id = $1
-					  WHERE c.level = $2 AND rc.id IS NULL AND c.id > $3
+					  WHERE c.level = $2 AND rc.id IS NULL AND c.id >= $3
 					  ORDER BY id LIMIT $4;`
 
 	err := c.db.SelectContext(ctx, &cases, casesGetQueue, specialistID, level, cursor, c.casesPerRequest+1)
@@ -178,7 +180,8 @@ func (c caseRepo) CreateRated(ctx context.Context, rated models.RatedBase) (int,
 			)
 		}
 
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			return 0, customErrors.UniqueRatedErr
 		}
 
@@ -197,15 +200,31 @@ func (c caseRepo) GetRatedSolved(ctx context.Context, cursor int) (models.RatedC
 	var nextCursor null.Int
 	var casesWithCursor models.RatedCursor
 
-	casesGetQueue := `SELECT DISTINCT ON (case_id) id, specialist_id, case_id, choice, datetime, status
-					  FROM rated_cases
-					  WHERE status != 'Unknown' AND id > $1
+	casesGetQueue := `SELECT DISTINCT ON (rc.case_id) rc.id, rc.specialist_id, rc.case_id, rc.choice, rc.datetime, rc.status,
+					  c.camera_id, c.violation_value, v.type, v.amount, c.level, c.photo_url
+					  FROM rated_cases rc
+					  LEFT JOIN cases c ON rc.case_id = c.id
+					  LEFT JOIN violations v ON c.violation_id = v.id
+					  WHERE status != 'Unknown' AND rc.id >= $1
 					  ORDER BY case_id, id
 					  LIMIT $2;`
 
-	err := c.db.SelectContext(ctx, &rated, casesGetQueue, cursor, c.casesPerRequest+1)
+	rows, err := c.db.QueryxContext(ctx, casesGetQueue, cursor, c.casesPerRequest+1)
 	if err != nil {
 		return models.RatedCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rt models.Rated
+
+		err := rows.Scan(&rt.ID, &rt.SpecialistID, &rt.CaseID, &rt.Choice, &rt.Date, &rt.Status, &rt.CameraID,
+			&rt.ViolationValue, &rt.Violation.Type, &rt.Violation.Amount, &rt.Level, &rt.PhotoUrl)
+		if err != nil {
+			return models.RatedCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
+
+		rated = append(rated, rt)
 	}
 
 	if len(rated) == c.casesPerRequest+1 {

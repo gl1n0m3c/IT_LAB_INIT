@@ -74,7 +74,7 @@ const docTemplate = `{
         },
         "/manager/get_specialists_rating": {
             "get": {
-                "description": "Retrieves a list of specialists' ratings within a specified time range, paginated by a cursor.",
+                "description": "Retrieves a list of specialists ratings within a specified time range, paginated by a cursor.\nTime example (2023-04-12T15:04:05Z - without time zone / 2023-04-12T15:04:05+07:00 - with time zone)",
                 "consumes": [
                     "application/json"
                 ],

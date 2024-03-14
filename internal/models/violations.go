@@ -1,6 +1,6 @@
 package models
 
 type Violation struct {
-	Type   string
-	Amount int
+	Type   string `json:"type"`
+	Amount int    `json:"amount"`
 }

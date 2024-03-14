@@ -76,7 +76,7 @@ func TestMain(m *testing.M) {
 func TestCreateGetDeleteCasesRated(t *testing.T) {
 	var createdIDs []int
 
-	caseRepo := repository.InitCaseRepo(db, 2)
+	caseRepo := repository.InitCaseRepo(db)
 
 	// Creating
 	for _, caseData := range testCases {
@@ -92,25 +92,26 @@ func TestCreateGetDeleteCasesRated(t *testing.T) {
 
 	ctx := context.Background()
 
-	caseCursor, err := caseRepo.GetCasesByLevel(ctx, 2, 0)
+	caseCursor, err := caseRepo.GetCasesByLevel(ctx, 1, 2, 0)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 
-	assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: 0, Valid: false}}, caseCursor.Cursor)
+	assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: 10005, Valid: true}}, caseCursor.Cursor)
 
 	// Get
 	for i, id := range createdIDs {
-		caseCursor, err := caseRepo.GetCasesByLevel(ctx, 1, id-1)
+		caseCursor, err := caseRepo.GetCasesByLevel(ctx, id, 1, id-1)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
 
-		if i > 1 {
+		if i == 4 {
 			assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: 0, Valid: false}}, caseCursor.Cursor)
 		} else {
-			assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: int64(id + 2), Valid: true}}, caseCursor.Cursor)
+			assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: int64(id), Valid: true}}, caseCursor.Cursor)
 		}
+
 	}
 
 	// Create rated
@@ -137,11 +138,8 @@ func TestCreateGetDeleteCasesRated(t *testing.T) {
 			t.Errorf(err.Error())
 		}
 
-		if i > 0 {
-			assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: 0, Valid: false}}, caseCursor.Cursor)
-		} else {
-			assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: int64(id + 2), Valid: true}}, caseCursor.Cursor)
-		}
+		assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: int64(id), Valid: true}}, caseCursor.Cursor)
+
 	}
 
 	// UpdateMain rated status
@@ -156,17 +154,13 @@ func TestCreateGetDeleteCasesRated(t *testing.T) {
 	}
 
 	// Get rated
-	for i, id := range createdRatedIDs {
+	for _, id := range createdRatedIDs {
 		caseCursor, err := caseRepo.GetRatedSolved(ctx, id-1)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
 
-		if i > 2 {
-			assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: 0, Valid: false}}, caseCursor.Cursor)
-		} else {
-			assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: int64(id + 2), Valid: true}}, caseCursor.Cursor)
-		}
+		assert.Equal(t, null.Int{NullInt64: sql.NullInt64{Int64: int64(id), Valid: true}}, caseCursor.Cursor)
 	}
 
 	// Delete
