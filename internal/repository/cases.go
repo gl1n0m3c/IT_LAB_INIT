@@ -37,13 +37,13 @@ func (c caseRepo) CreateCase(ctx context.Context, caseData models.CaseBase) (int
 		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
 	}
 
-	caseCreateQuery := `INSERT INTO cases (camera_id, transport, violation_id, violation_value, level, datetime, photo_url)
-						VALUES ($1, $2, $3, $4, $5, $6, $7)
+	caseCreateQuery := `INSERT INTO cases (camera_id, transport, violation_id, violation_value, level, current_level, datetime, photo_url)
+						VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 						RETURNING id;`
 
 	err = tx.QueryRowxContext(ctx, caseCreateQuery,
 		caseData.CameraID, caseData.Transport, caseData.ViolationID, caseData.ViolationValue,
-		caseData.Level, caseData.Datetime, caseData.PhotoUrl).Scan(&createdCaseID)
+		caseData.Level, caseData.Level, caseData.Datetime, caseData.PhotoUrl).Scan(&createdCaseID)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return 0, utils.ErrNormalizer(
@@ -62,24 +62,132 @@ func (c caseRepo) CreateCase(ctx context.Context, caseData models.CaseBase) (int
 	return createdCaseID, nil
 }
 
-func (c caseRepo) GetCaseByID(ctx context.Context, caseID int) (models.Case, error) {
-	var caseData models.Case
+func (c caseRepo) UpdateCaseLevel(ctx context.Context, caseID, level int) error {
+	tx, err := c.db.Beginx()
+	if err != nil {
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
+	}
 
-	caseGetQuery := `SELECT id, camera_id, transport, violation_id, violation_value, level, datetime, photo_url
-					 FROM cases
-					 WHERE id=$1;`
+	updateQuery := `UPDATE cases SET current_level = $1 WHERE id=$2;`
 
-	err := c.db.GetContext(ctx, &caseData, caseGetQuery, caseID)
+	res, err := c.db.ExecContext(ctx, updateQuery, level, caseID)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.ExecErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
+	}
+	if count != 1 {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
+	}
+
+	if err = tx.Commit(); err != nil {
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.CommitErr, Err: err})
+	}
+
+	return nil
+}
+
+func (c caseRepo) UpdateCaseSetSolved(ctx context.Context, caseID int, rightChoice bool) error {
+	tx, err := c.db.Beginx()
+	if err != nil {
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
+	}
+
+	updateCaseSolvedQuery := `UPDATE cases SET is_solved=true WHERE id=$1;`
+	updateRatedSpecialistsQuery := `UPDATE rated_cases
+									SET status =
+										CASE
+									WHEN choice = $1 THEN 'Correct'::status_type
+									ELSE 'Incorrect'::status_type
+									END
+									WHERE case_id = $2;`
+
+	res, err := c.db.ExecContext(ctx, updateCaseSolvedQuery, caseID)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.ExecErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
+	}
+	if count != 1 {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
+	}
+
+	_, err = c.db.ExecContext(ctx, updateRatedSpecialistsQuery, rightChoice, caseID)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.ExecErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
+	}
+
+	return nil
+}
+
+func (c caseRepo) GetCaseLevelSolvedRatingsTrueByID(ctx context.Context, caseID, specialistLevel int) (int, int, int, bool, error) {
+	var level, num, numTrue int
+	var isSolved bool
+
+	caseGetQuery := `SELECT c.current_level, c.is_solved, COUNT(rs.case_id), SUM(CASE WHEN rs.choice = true THEN 1 ELSE 0 END)
+					 FROM cases c
+					 LEFT JOIN rated_cases rs ON c.id = rs.case_id
+					 LEFT JOIN specialists s ON rs.specialist_id = s.id
+					 WHERE c.id = $1 AND s.level = $2
+					 GROUP BY c.current_level, c.is_solved;`
+
+	err := c.db.QueryRowxContext(ctx, caseGetQuery, caseID, specialistLevel).Scan(&level, &isSolved, &num, &numTrue)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return models.Case{}, customErrors.NoRowsCaseErr
+			return 0, 0, 0, false, customErrors.NoRowsCaseErr
 		default:
-			return models.Case{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
+			return 0, 0, 0, false, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 		}
 	}
 
-	return caseData, nil
+	return level, num, numTrue, isSolved, nil
 }
 
 func (c caseRepo) GetCasesByLevel(ctx context.Context, specialistID, level, cursor int) (models.CaseCursor, error) {
@@ -92,7 +200,7 @@ func (c caseRepo) GetCasesByLevel(ctx context.Context, specialistID, level, curs
 					  FROM cases c
 					  LEFT JOIN violations v ON c.violation_id = v.id
 					  LEFT JOIN rated_cases rc ON c.id = rc.case_id AND rc.specialist_id = $1
-					  WHERE c.level = $2 AND rc.id IS NULL AND c.id >= $3
+					  WHERE c.level = $2 AND rc.id IS NULL AND c.id >= $3 AND c.is_solved = false
 					  ORDER BY id LIMIT $4;`
 
 	err := c.db.SelectContext(ctx, &cases, casesGetQueue, specialistID, level, cursor, c.casesPerRequest+1)
@@ -195,6 +303,19 @@ func (c caseRepo) CreateRated(ctx context.Context, rated models.RatedBase) (int,
 	return createdRatedID, nil
 }
 
+func (c caseRepo) GetNumberRatedByCaseID(ctx context.Context, caseID int) (int, error) {
+	var number int
+
+	getNumberQuery := `SELECT COUNT(*) FROM rated_cases WHERE case_id=$1;`
+
+	err := c.db.QueryRowxContext(ctx, getNumberQuery, caseID).Scan(&number)
+	if err != nil {
+		return 0, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+	}
+
+	return number, nil
+}
+
 func (c caseRepo) GetRatedSolved(ctx context.Context, cursor int) (models.RatedCursor, error) {
 	var rated []models.Rated
 	var nextCursor null.Int
@@ -205,7 +326,7 @@ func (c caseRepo) GetRatedSolved(ctx context.Context, cursor int) (models.RatedC
 					  FROM rated_cases rc
 					  LEFT JOIN cases c ON rc.case_id = c.id
 					  LEFT JOIN violations v ON c.violation_id = v.id
-					  WHERE status != 'Unknown' AND rc.id >= $1
+					  WHERE status != 'Unknown' AND rc.id >= $1 AND c.is_solved = true
 					  ORDER BY case_id, id
 					  LIMIT $2;`
 
@@ -294,7 +415,7 @@ func (c caseRepo) GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFu
 					 FROM cases c
 					 LEFT JOIN rated_cases rc ON c.id = rc.case_id
 					 LEFT JOIN specialists s ON rc.specialist_id = s.id
-					 LEFT JOIN violation v ON c.violation_id = v.id
+					 LEFT JOIN violations v ON c.violation_id = v.id
 					 WHERE c.id = $1`
 
 	rows, err := c.db.QueryxContext(ctx, caseGetQuery, caseID)

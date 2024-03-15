@@ -19,6 +19,7 @@ import (
 type specialistService struct {
 	specialistRepo repository.Specialists
 	caseRepo       repository.Cases
+	k              int
 	dbResponseTime time.Duration
 	logger         *log.Logs
 }
@@ -31,6 +32,7 @@ func InitSpecialistService(
 	return specialistService{
 		specialistRepo: specialistRepo,
 		caseRepo:       caseRepo,
+		k:              viper.GetInt(config.K),
 		dbResponseTime: time.Duration(viper.GetInt(config.DBResponseTime)) * time.Second,
 		logger:         logger,
 	}
@@ -112,33 +114,69 @@ func (s specialistService) CreateRated(ctx context.Context, rated models.RatedBa
 		return 0, customErrors.UserUnverified
 	}
 
-	caseCtx1, caseCansel := context.WithTimeout(ctx, s.dbResponseTime)
-	defer caseCansel()
+	caseCtx1, caseCansel1 := context.WithTimeout(ctx, s.dbResponseTime)
+	defer caseCansel1()
 
-	// Проверка, что уровень специалиста совпадает с уровнем кейса
-	caseDate, err := s.caseRepo.GetCaseByID(caseCtx1, rated.CaseID)
+	// Проверка, что уровень специалиста совпадает с уровнем кейса + кейс еще не разрешен + проверка на количество оценок
+	level, numberOfRated, numberOfTrue, isSolved, err := s.caseRepo.GetCaseLevelSolvedRatingsTrueByID(caseCtx1, rated.CaseID, specialist.Level)
 	if err != nil {
 		s.logger.ErrorLogger.Error().Msg(err.Error())
 		return 0, err
 	}
-	if caseDate.Level != specialist.Level {
+	if level != specialist.Level {
 		s.logger.ErrorLogger.Info().Msg(customErrors.UserBadLevel.Error())
 		return 0, customErrors.UserBadLevel
 	}
+	if isSolved || numberOfRated >= s.k {
+		fmt.Println(isSolved, numberOfRated)
+		s.logger.ErrorLogger.Info().Msg(customErrors.CaseAlreadySolved.Error())
+		return 0, customErrors.CaseAlreadySolved
+	}
 
-	caseCtx2, caseCansel := context.WithTimeout(ctx, s.dbResponseTime)
-	defer caseCansel()
+	caseCtx2, caseCansel2 := context.WithTimeout(ctx, s.dbResponseTime)
+	defer caseCansel2()
 
 	createdRatedID, err := s.caseRepo.CreateRated(caseCtx2, rated)
 	if err != nil {
 		s.logger.ErrorLogger.Error().Msg(err.Error())
 		return 0, err
 	}
+	// TODO: докрутить сюда увеличение подряд решенных кейсов
+
+	// Проверка на консенсус
+	if s.k-1 == numberOfRated {
+		if (numberOfRated == numberOfTrue && rated.Choice) || (numberOfTrue == 0 && !rated.Choice) {
+
+			updateCtx, updateCansel := context.WithTimeout(ctx, s.dbResponseTime)
+			defer updateCansel()
+
+			var rightChoice bool
+			if numberOfRated == numberOfTrue {
+				rightChoice = true
+			}
+
+			err := s.caseRepo.UpdateCaseSetSolved(updateCtx, rated.CaseID, rightChoice)
+			if err != nil {
+				s.logger.ErrorLogger.Error().Msg(err.Error())
+				return 0, err
+			}
+		} else {
+			fmt.Println("change level")
+
+			updateCtx, updateCansel := context.WithTimeout(ctx, s.dbResponseTime)
+			defer updateCansel()
+
+			err := s.caseRepo.UpdateCaseLevel(updateCtx, rated.CaseID, level+1)
+			if err != nil {
+				s.logger.ErrorLogger.Error().Msg(err.Error())
+				return 0, err
+			}
+		}
+	}
 
 	s.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessCreate, "rated_case", createdRatedID))
 
 	return createdRatedID, nil
-
 }
 
 func (s specialistService) GetCasesByLevel(ctx context.Context, specialistID, cursor int) (models.CaseCursor, error) {

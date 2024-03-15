@@ -85,6 +85,12 @@ func (s specialistsHandler) CreateRated(c *gin.Context) {
 		case errors.Is(err, customErrors.NoRowsSpecialistIDErr):
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
+		case errors.Is(err, customErrors.CaseAlreadySolved):
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+			return
+		case errors.Is(err, customErrors.UserBadLevel):
+			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
+			return
 		default:
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return

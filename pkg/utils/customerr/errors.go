@@ -14,4 +14,6 @@ var (
 
 	UserUnverified = errors.New("Аккаунт пользователя не подтвержден")
 	UserBadLevel   = errors.New("Аккаунт пользователя имеет неподходящий уровень")
+
+	CaseAlreadySolved = errors.New("Данный кейс закрыт для отценивания")
 )

@@ -4,6 +4,7 @@
   violation_id: "e2f7e5b2-ea16-4c48-8a8a-5e2d1a2b8410"
   violation_value: "13 km/h"
   level: 1
+  current_level: 1
   datetime: "2023-04-01T12:00:00Z"
   photo_url: "http://example.com/photo1.jpg"
 
@@ -14,6 +15,7 @@
   violation_id: "f3a4b5c6-d7e8-9fa0-b1c2-d3e4f5a6b7c8"
   violation_value: "High Street"
   level: 1
+  current_level: 1
   datetime: "2023-04-01T12:05:00Z"
   photo_url: "http://example.com/photo2.jpg"
 
@@ -23,6 +25,7 @@
   violation_id: "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6"
   violation_value: "Red Light"
   level: 1
+  current_level: 1
   datetime: "2023-04-01T12:10:00Z"
   photo_url: "http://example.com/photo3.jpg"
 
@@ -32,6 +35,7 @@
   violation_id: "b1c2d3e4-f5a6-b7c8-d9e0-a1f2b3c4d5e6"
   violation_value: "Stop Sign"
   level: 1
+  current_level: 1
   datetime: "2023-04-01T12:15:00Z"
   photo_url: "http://example.com/photo4.jpg"
 
@@ -41,5 +45,6 @@
   violation_id: "c1d2e3f4-a5b6-c7d8-e9f0-a1b2c3d4e5f6"
   violation_value: "Crosswalk"
   level: 2
+  current_level: 2
   datetime: "2023-04-01T12:20:00Z"
   photo_url: "http://example.com/photo5.jpg"

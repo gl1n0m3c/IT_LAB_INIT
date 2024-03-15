@@ -9,8 +9,10 @@ CREATE TABLE IF NOT EXISTS cases (
     violation_id VARCHAR NOT NULL,
     violation_value VARCHAR NOT NULL,
     level INTEGER NOT NULL,
+    current_level INTEGER NOT NULL,
     datetime TIMESTAMP WITH TIME ZONE NOT NULL,
-    photo_url VARCHAR NOT NULL
+    photo_url VARCHAR NOT NULL,
+    is_solved BOOLEAN DEFAULT (FALSE) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS rated_cases (

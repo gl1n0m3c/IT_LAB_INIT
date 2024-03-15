@@ -11,6 +11,7 @@ type CaseBase struct {
 	ViolationID    string    `json:"violation_id" db:"violation_id"`
 	ViolationValue string    `json:"violation_value" db:"violation_value"`
 	Level          int       `json:"level" db:"level"`
+	CurrentLevel   int       `json:"current_level" db:"current_level"`
 	Datetime       time.Time `json:"datetime" db:"datetime"`
 	PhotoUrl       string    `json:"photo_url" db:"photo_url"`
 }

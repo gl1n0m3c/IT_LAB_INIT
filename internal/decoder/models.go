@@ -82,6 +82,7 @@ func (c CaseDataType1) CameraDataToCaseBase() (models.CaseBase, error) {
 	caseData.ViolationID = c.ViolationID
 	caseData.ViolationValue = c.ViolationValue
 	caseData.Level = c.SkillValue
+	caseData.CurrentLevel = c.SkillValue
 	caseData.Datetime = parsedTime
 
 	return caseData, nil
@@ -114,6 +115,7 @@ func (c CaseDataType2) CameraDataToCaseBase() (models.CaseBase, error) {
 	caseData.ViolationID = c.Violation.ID
 	caseData.ViolationValue = c.Violation.Value
 	caseData.Level = c.Skill.Value
+	caseData.CurrentLevel = c.Skill.Value
 	caseData.Datetime = parsedTime
 
 	return caseData, nil
@@ -129,6 +131,7 @@ func (c CaseDataType3) CameraDataToCaseBase() (models.CaseBase, error) {
 	caseData.ViolationID = c.Violation.ID
 	caseData.ViolationValue = c.Violation.Value
 	caseData.Level = c.Skill
+	caseData.CurrentLevel = c.Skill
 	caseData.Datetime = parsedTime
 
 	return caseData, nil
