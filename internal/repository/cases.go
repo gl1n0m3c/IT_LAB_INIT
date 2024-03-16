@@ -114,6 +114,7 @@ func (c caseRepo) UpdateCaseSetSolved(ctx context.Context, caseID int, rightChoi
 	}
 
 	updateCaseSolvedQuery := `UPDATE cases SET is_solved=true WHERE id=$1;`
+
 	updateRatedSpecialistsQuery := `UPDATE rated_cases
 									SET status =
 										CASE
@@ -121,6 +122,19 @@ func (c caseRepo) UpdateCaseSetSolved(ctx context.Context, caseID int, rightChoi
 									ELSE 'Incorrect'::status_type
 									END
 									WHERE case_id = $2;`
+
+	updateSpecialistsQuery := `UPDATE specialists s
+        					   SET current_row = CASE
+							   	WHEN rc.status = 'Correct'::status_type THEN s.current_row + 1
+							   	ELSE 0
+							   END,
+							   row = CASE
+							   	WHEN rc.status = 'Correct'::status_type AND s.current_row + 1 > s.row THEN s.current_row + 1
+							   	ELSE s.row
+							   END
+        					   FROM rated_cases rc
+        					   WHERE rc.case_id = $1 AND rc.specialist_id = s.id
+        					   RETURNING s.id`
 
 	res, err := c.db.ExecContext(ctx, updateCaseSolvedQuery, caseID)
 	if err != nil {
@@ -163,6 +177,17 @@ func (c caseRepo) UpdateCaseSetSolved(ctx context.Context, caseID int, rightChoi
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
 	}
 
+	_, err = c.db.ExecContext(ctx, updateSpecialistsQuery, caseID)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.ExecErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
+	}
+
 	return nil
 }
 
@@ -181,7 +206,7 @@ func (c caseRepo) GetCaseLevelSolvedRatingsTrueByID(ctx context.Context, caseID,
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return 0, 0, 0, false, customErrors.NoRowsCaseErr
+			return 0, 0, 0, false, customErrors.UserBadLevel
 		default:
 			return 0, 0, 0, false, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 		}
@@ -408,42 +433,53 @@ func (c caseRepo) UpdateRatedStatus(ctx context.Context, newRated models.RatedUp
 
 func (c caseRepo) GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFul, error) {
 	var caseFul models.CaseFul
+	var ratedNum int
 
-	caseGetQuery := `SELECT c.transport, v.type, v.amount, c.violation_value, c.level, c.datetime, c.photo_url,
-					        rc.id, rc.status, rc.datetime,
-					        s.id, s.fullname, s.level, s.photo_url
+	caseGetQuery := `SELECT c.camera_id, c.transport, v.id, v.type, v.amount, c.violation_value, c.level, c.current_level, c.datetime, c.photo_url, c.is_solved, COUNT(*)
 					 FROM cases c
-					 LEFT JOIN rated_cases rc ON c.id = rc.case_id
-					 LEFT JOIN specialists s ON rc.specialist_id = s.id
 					 LEFT JOIN violations v ON c.violation_id = v.id
-					 WHERE c.id = $1`
+					 LEFT JOIN rated_cases rc ON c.id = rc.case_id
+					 WHERE c.id = $1
+					 GROUP BY c.camera_id, c.transport, v.id, v.type, v.amount, c.violation_value, c.level, c.current_level, c.datetime, c.photo_url, c.is_solved`
 
-	rows, err := c.db.QueryxContext(ctx, caseGetQuery, caseID)
+	err := c.db.QueryRowxContext(ctx, caseGetQuery, caseID).Scan(&caseFul.CameraID, &caseFul.Transport, &caseFul.ViolationID, &caseFul.Violation.Type,
+		&caseFul.Violation.Amount, &caseFul.ViolationValue,
+		&caseFul.Level, &caseFul.CurrentLevel, &caseFul.Datetime, &caseFul.PhotoUrl, &caseFul.IsSolved, &ratedNum)
 	if err != nil {
-		return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
+		return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 	}
 
-	for rows.Next() {
-		var ratedCover models.RatedCover
+	if ratedNum > 1 {
+		ratedGetQuery := `SELECT rc.id, rc.status, rc.datetime, s.id, s.fullname, s.level, s.photo_url
+					  	  FROM rated_cases rc
+					  	  LEFT JOIN specialists s ON rc.specialist_id = s.id
+					  	  WHERE rc.case_id = $1`
 
-		err := rows.Scan(&caseFul.Transport, &caseFul.Violation.Type, &caseFul.Violation.Amount, &caseFul.ViolationValue,
-			&caseFul.Level, &caseFul.Datetime, &caseFul.PhotoUrl,
-			&ratedCover.ID, &ratedCover.Status, &ratedCover.Date,
-			&ratedCover.SpecialistCover.ID, &ratedCover.SpecialistCover.Fullname, &ratedCover.SpecialistCover.Level, &ratedCover.SpecialistCover.PhotoUrl)
-		if err != nil {
-			return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		rows, err := c.db.QueryxContext(ctx, ratedGetQuery, caseID)
+		defer rows.Close()
+
+		var ratedCovers []models.RatedCover
+
+		for rows.Next() {
+			var ratedCover models.RatedCover
+
+			err := rows.Scan(&ratedCover.ID, &ratedCover.Status, &ratedCover.Date,
+				&ratedCover.SpecialistCover.ID, &ratedCover.SpecialistCover.Fullname, &ratedCover.SpecialistCover.Level, &ratedCover.SpecialistCover.PhotoUrl)
+			if err != nil {
+				return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+			}
+
+			ratedCovers = append(ratedCovers, ratedCover)
 		}
 
-		caseFul.RatedCovers = append(caseFul.RatedCovers, ratedCover)
-	}
+		err = rows.Err()
+		if err != nil {
+			return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
+		}
 
-	err = rows.Err()
-	if err != nil {
-		return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
-	}
-
-	if len(caseFul.RatedCovers) == 0 {
-		return models.CaseFul{}, customErrors.NoRowsCaseErr
+		caseFul.RatedCovers = &ratedCovers
+	} else {
+		caseFul.RatedCovers = nil
 	}
 
 	return caseFul, nil

@@ -50,7 +50,8 @@ func (s specialistsRepo) Create(ctx context.Context, specialist models.Specialis
 			)
 		}
 
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			return 0, customErrors.UniqueSpecialistErr
 		}
 
@@ -67,7 +68,7 @@ func (s specialistsRepo) Create(ctx context.Context, specialist models.Specialis
 func (s specialistsRepo) GetByID(ctx context.Context, specialistID int) (models.Specialist, error) {
 	var specialist models.Specialist
 
-	specialistGetQuery := `SELECT id, login, hashed_password, fullname, level, photo_url, is_verified
+	specialistGetQuery := `SELECT id, login, hashed_password, fullname, level, photo_url, is_verified, row
 						FROM specialists
 						WHERE id=$1;`
 
@@ -87,7 +88,7 @@ func (s specialistsRepo) GetByID(ctx context.Context, specialistID int) (models.
 func (s specialistsRepo) GetByLogin(ctx context.Context, specialistLogin string) (models.Specialist, error) {
 	var specialist models.Specialist
 
-	specialistGetQuery := `SELECT id, login, hashed_password, fullname, level, photo_url, is_verified
+	specialistGetQuery := `SELECT id, login, hashed_password, fullname, level, photo_url, is_verified, row
 						FROM specialists
 						WHERE login=$1;`
 
@@ -111,7 +112,7 @@ func (s specialistsRepo) GetSpecialistRating(ctx context.Context, timeStart, tim
 		nextCursor        null.Int
 	)
 
-	getRatingQuery := `SELECT s.id, s.fullname, s.level, s.photo_url,
+	getRatingQuery := `SELECT s.id, s.fullname, s.level, s.photo_url, row,
 					          COUNT(rc.id) AS total_cases,
 					          COUNT(CASE WHEN rc.status = 'Correct' THEN 1 END) AS correct_cases,
 					          COUNT(CASE WHEN rc.status = 'Unknown' THEN 1 END) AS unknown_cases
@@ -129,7 +130,7 @@ func (s specialistsRepo) GetSpecialistRating(ctx context.Context, timeStart, tim
 	for rows.Next() {
 		var ratingSpecialist models.RatingSpecialistCount
 
-		err := rows.Scan(&ratingSpecialist.ID, &ratingSpecialist.Fullname, &ratingSpecialist.Level, &ratingSpecialist.PhotoUrl,
+		err := rows.Scan(&ratingSpecialist.ID, &ratingSpecialist.Fullname, &ratingSpecialist.Level, &ratingSpecialist.PhotoUrl, &ratingSpecialist.Row,
 			&ratingSpecialist.Total, &ratingSpecialist.Correct, &ratingSpecialist.Unknown)
 		if err != nil {
 			return models.RatingSpecialistCountCursor{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})

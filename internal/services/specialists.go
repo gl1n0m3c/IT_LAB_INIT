@@ -123,10 +123,6 @@ func (s specialistService) CreateRated(ctx context.Context, rated models.RatedBa
 		s.logger.ErrorLogger.Error().Msg(err.Error())
 		return 0, err
 	}
-	if level != specialist.Level {
-		s.logger.ErrorLogger.Info().Msg(customErrors.UserBadLevel.Error())
-		return 0, customErrors.UserBadLevel
-	}
 	if isSolved || numberOfRated >= s.k {
 		fmt.Println(isSolved, numberOfRated)
 		s.logger.ErrorLogger.Info().Msg(customErrors.CaseAlreadySolved.Error())
@@ -141,7 +137,6 @@ func (s specialistService) CreateRated(ctx context.Context, rated models.RatedBa
 		s.logger.ErrorLogger.Error().Msg(err.Error())
 		return 0, err
 	}
-	// TODO: докрутить сюда увеличение подряд решенных кейсов
 
 	// Проверка на консенсус
 	if s.k-1 == numberOfRated {
@@ -161,8 +156,6 @@ func (s specialistService) CreateRated(ctx context.Context, rated models.RatedBa
 				return 0, err
 			}
 		} else {
-			fmt.Println("change level")
-
 			updateCtx, updateCansel := context.WithTimeout(ctx, s.dbResponseTime)
 			defer updateCansel()
 

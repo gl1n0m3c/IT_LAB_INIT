@@ -76,10 +76,7 @@ type RatedCover struct {
 
 type CaseFul struct {
 	Violation
-	Transport      string       `json:"transport"`
-	ViolationValue string       `json:"violation_value"`
-	Level          int          `json:"level"`
-	Datetime       time.Time    `json:"datetime" `
-	PhotoUrl       string       `json:"photo_url"`
-	RatedCovers    []RatedCover `json:"rated_covers"`
+	CaseBase
+	IsSolved    bool          `json:"is_solved"`
+	RatedCovers *[]RatedCover `json:"rated_covers"`
 }

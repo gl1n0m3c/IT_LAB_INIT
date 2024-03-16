@@ -25,6 +25,7 @@ func InitManagerHandler(
 
 // GetFulCaseByID @Summary Retrieve a case by ID
 // @Description Retrieves a case by its ID and returns detailed information about the case.
+// @Description Field `rated_covers` could be null if there are no ratings
 // @Tags managers
 // @Accept  json
 // @Produce  json

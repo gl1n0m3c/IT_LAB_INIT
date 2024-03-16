@@ -19,6 +19,7 @@ type Specialist struct {
 	SpecialistCreate
 	ID         int  `db:"id" json:"id"`
 	Level      int  `db:"level" json:"level"`
+	Row        int  `db:"row" json:"row"`
 	IsVerified bool `db:"is_verified" json:"isVerified"`
 }
 
@@ -38,5 +39,6 @@ type SpecialistCover struct {
 	ID       int         `json:"id"`
 	Fullname null.String `json:"fullname"`
 	Level    int         `json:"level"`
+	Row      int         `json:"row"`
 	PhotoUrl null.String `json:"photo_url"`
 }
