@@ -19,11 +19,12 @@ import (
 
 type specialistsRepo struct {
 	db                    *sqlx.DB
+	j                     int
 	specialistsPerRequest int
 }
 
 func InitSpecialistsRepo(db *sqlx.DB) Specialists {
-	return specialistsRepo{db: db, specialistsPerRequest: viper.GetInt(config.EntitiesPerRequest)}
+	return specialistsRepo{db: db, j: viper.GetInt(config.J), specialistsPerRequest: viper.GetInt(config.EntitiesPerRequest)}
 }
 
 func (s specialistsRepo) Create(ctx context.Context, specialist models.SpecialistCreate) (int, error) {
@@ -150,6 +151,98 @@ func (s specialistsRepo) GetSpecialistRating(ctx context.Context, timeStart, tim
 	return specialistsCursor, nil
 }
 
+func (s specialistsRepo) GetRating(timeStart, timeEnd time.Time) ([]models.RatingSpecialistID, error) {
+	var ratings []models.RatingSpecialistID
+
+	getRatingQuery := `SELECT s.id, s.level, COUNT(CASE WHEN rc.status = 'Correct' THEN 1 END) * 1.0 / COUNT(rc.id) AS rating
+					   FROM specialists s
+					   LEFT JOIN rated_cases rc ON s.id = rc.specialist_id AND rc.datetime BETWEEN $1 AND $2
+					   GROUP BY s.id, s.level
+					   HAVING COUNT(rc.id) >= $3
+					   ORDER BY COUNT(CASE WHEN rc.status = 'Correct' THEN 1 END) * 1.0 / COUNT(rc.id) DESC, COUNT(CASE WHEN rc.status = 'Correct' THEN 1 END);`
+
+	rows, err := s.db.Queryx(getRatingQuery, timeStart, timeEnd, s.j)
+	if err != nil {
+		return []models.RatingSpecialistID{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rating models.RatingSpecialistID
+
+		err := rows.Scan(&rating.ID, &rating.Level, &rating.Rating)
+		if err != nil {
+			return []models.RatingSpecialistID{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
+
+		ratings = append(ratings, rating)
+	}
+
+	return ratings, nil
+}
+
+func (s specialistsRepo) UpdateSpecialistsIncDecLevel(incrementIDs, decrementIDs []int) error {
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
+	}
+
+	query1 := `UPDATE specialists SET level = level + 1 WHERE id = ANY($1)`
+	query2 := `UPDATE specialists SET level = level - 1 WHERE id = ANY($1)`
+
+	res, err := s.db.Exec(query1, pq.Array(incrementIDs))
+	if err != nil {
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
+	}
+
+	if count != int64(len(incrementIDs)) {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
+	}
+
+	res, err = s.db.Exec(query2, pq.Array(decrementIDs))
+	if err != nil {
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
+	}
+	count, err = res.RowsAffected()
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: err},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
+	}
+
+	if count != int64(len(decrementIDs)) {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return utils.ErrNormalizer(
+				utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)},
+				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
+			)
+		}
+		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
+	}
+
+	return nil
+}
+
 func (s specialistsRepo) UpdateMain(ctx context.Context, specialistUpdate models.Specialist, newPasswordFlag bool) error {
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -174,7 +267,6 @@ func (s specialistsRepo) UpdateMain(ctx context.Context, specialistUpdate models
 		}
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
 	}
-
 	count, err := res.RowsAffected()
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
@@ -185,7 +277,6 @@ func (s specialistsRepo) UpdateMain(ctx context.Context, specialistUpdate models
 		}
 		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
 	}
-
 	if count != 1 {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return utils.ErrNormalizer(

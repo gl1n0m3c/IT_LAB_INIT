@@ -6,6 +6,7 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/delivery/docs"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/delivery/middleware"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/delivery/routers"
+	"github.com/gl1n0m3c/IT_LAB_INIT/internal/reporting_period"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/database"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/log"
@@ -48,6 +49,8 @@ func main() {
 	// Для загрузки тестовых данных
 	//utils.LoadFixtures(db)
 	//utils.ClearDatabase(db)
+
+	reporting_period.StartReporting(db, logger)
 
 	if err := router.Run("0.0.0.0:8080"); err != nil {
 		panic(fmt.Sprintf("Failed to run client: %s", err.Error()))

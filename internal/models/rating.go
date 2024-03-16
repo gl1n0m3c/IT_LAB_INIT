@@ -13,3 +13,9 @@ type RatingSpecialistCountCursor struct {
 	Specialists []RatingSpecialistCount `json:"specialists"`
 	Cursor      null.Int                `json:"cursor"`
 }
+
+type RatingSpecialistID struct {
+	ID     int
+	Level  int
+	Rating float32
+}
