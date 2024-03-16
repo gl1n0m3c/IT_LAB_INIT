@@ -284,7 +284,6 @@ func (p publicHandler) CameraCreate(c *gin.Context) {
 
 	createdCameraID, err := p.service.CameraCreate(ctx, camera)
 	if err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
@@ -412,7 +411,6 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 
 	createdCaseID, err := p.service.CaseCreate(ctx, caseData)
 	if err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}

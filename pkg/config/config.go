@@ -29,6 +29,11 @@ const (
 	JWTSecret = "JWT_SECRET"
 
 	EntitiesPerRequest = "ENTITIES_PER_REQUEST"
+
+	Mail         = "MAIL"
+	MailPassword = "MAIL_PASSWORD"
+	MailHost     = "MAIL_HOST"
+	MailPort     = "MAIL_PORT"
 )
 
 func InitConfig() {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/models"
@@ -189,6 +190,30 @@ func (c caseRepo) UpdateCaseSetSolved(ctx context.Context, caseID int, rightChoi
 	}
 
 	return nil
+}
+
+func (c caseRepo) GetFineData(ctx context.Context, caseID int) (models.FineData, error) {
+	var fineData models.FineData
+
+	getFineDataQuery := `SELECT cn.contacts, c.photo_url, cm.coordinates, c.violation_value, v.type, v.amount, c.datetime
+						 FROM cases c
+						 JOIN violations v ON c.violation_id = v.id
+						 JOIN contacts cn ON c.transport = cn.transport
+						 JOIN cameras cm ON c.camera_id = cm.id
+						 WHERE c.id=$1`
+	err := c.db.QueryRowxContext(ctx, getFineDataQuery, caseID).Scan(&fineData.Mail, &fineData.PhotoUrl, &fineData.Coordinated,
+		&fineData.ViolationValue, &fineData.Violation.Type, &fineData.Violation.Amount, &fineData.Date)
+	if err != nil {
+		return models.FineData{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+	}
+
+	var contacts map[string]string
+	if err := json.Unmarshal([]byte(fineData.Mail), &contacts); err != nil {
+		return models.FineData{}, err // Используйте вашу собственную обработку ошибок
+	}
+	fineData.Mail = contacts["email"]
+
+	return fineData, nil
 }
 
 func (c caseRepo) GetCaseLevelSolvedRatingsTrueByID(ctx context.Context, caseID, specialistLevel int) (int, int, int, bool, error) {

@@ -7,6 +7,7 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/repository"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/log"
+	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/sender"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils"
 	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/responses"
@@ -124,7 +125,6 @@ func (s specialistService) CreateRated(ctx context.Context, rated models.RatedBa
 		return 0, err
 	}
 	if isSolved || numberOfRated >= s.k {
-		fmt.Println(isSolved, numberOfRated)
 		s.logger.ErrorLogger.Info().Msg(customErrors.CaseAlreadySolved.Error())
 		return 0, customErrors.CaseAlreadySolved
 	}
@@ -141,16 +141,30 @@ func (s specialistService) CreateRated(ctx context.Context, rated models.RatedBa
 	// Проверка на консенсус
 	if s.k-1 == numberOfRated {
 		if (numberOfRated == numberOfTrue && rated.Choice) || (numberOfTrue == 0 && !rated.Choice) {
-
-			updateCtx, updateCansel := context.WithTimeout(ctx, s.dbResponseTime)
-			defer updateCansel()
-
 			var rightChoice bool
 			if numberOfRated == numberOfTrue {
 				rightChoice = true
 			}
 
+			updateCtx, updateCansel := context.WithTimeout(ctx, s.dbResponseTime)
+			defer updateCansel()
+
 			err := s.caseRepo.UpdateCaseSetSolved(updateCtx, rated.CaseID, rightChoice)
+			if err != nil {
+				s.logger.ErrorLogger.Error().Msg(err.Error())
+				return 0, err
+			}
+
+			fineDataCtx, fineDataCansel := context.WithTimeout(ctx, s.dbResponseTime)
+			defer fineDataCansel()
+
+			fineData, err := s.caseRepo.GetFineData(fineDataCtx, rated.CaseID)
+			if err != nil {
+				s.logger.ErrorLogger.Error().Msg(err.Error())
+				return 0, err
+			}
+
+			err = sender.MailSender(fineData)
 			if err != nil {
 				s.logger.ErrorLogger.Error().Msg(err.Error())
 				return 0, err

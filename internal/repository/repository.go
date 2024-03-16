@@ -32,6 +32,7 @@ type Cases interface {
 	CreateCase(ctx context.Context, caseData models.CaseBase) (int, error)
 	UpdateCaseLevel(ctx context.Context, caseID, level int) error
 	UpdateCaseSetSolved(ctx context.Context, caseID int, rightChoice bool) error
+	GetFineData(ctx context.Context, caseID int) (models.FineData, error)
 	GetCaseLevelSolvedRatingsTrueByID(ctx context.Context, caseID, specialistLevel int) (int, int, int, bool, error)
 	GetCasesByLevel(ctx context.Context, specialistID, level, cursor int) (models.CaseCursor, error)
 	DeleteCase(ctx context.Context, caseID int) error

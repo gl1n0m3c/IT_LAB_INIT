@@ -50,7 +50,7 @@ func main() {
 	//utils.LoadFixtures(db)
 	//utils.ClearDatabase(db)
 
-	reporting_period.StartReporting(db, logger)
+	go reporting_period.StartReporting(db, logger)
 
 	if err := router.Run("0.0.0.0:8080"); err != nil {
 		panic(fmt.Sprintf("Failed to run client: %s", err.Error()))
