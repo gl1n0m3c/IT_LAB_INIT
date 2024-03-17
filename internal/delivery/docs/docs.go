@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/manager/get_case": {
             "get": {
-                "description": "Retrieves a case by its ID and returns detailed information about the case.",
+                "description": "Retrieves a case by its ID and returns detailed information about the case.\nField ` + "`" + `rated_covers` + "`" + ` could be null if there are no ratings",
                 "consumes": [
                     "application/json"
                 ],
@@ -546,7 +546,7 @@ const docTemplate = `{
         },
         "/specialist/get_cases_by_level": {
             "get": {
-                "description": "Retrieves cases based on the provided cursor ID and the user's ID. It returns cases that match the level of difficulty or rating specified for the user.",
+                "description": "Retrieves cases based on the provided cursor ID and the user's ID. It returns cases that match the level of difficulty or rating specified for the user.\nReturned cursor can be only int or null. It depends on existence of cases.",
                 "consumes": [
                     "application/json"
                 ],
@@ -651,6 +651,65 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "JWT is invalid or expired",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/specialist/get_rating": {
+            "get": {
+                "description": "Give specialists rating",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "specialists"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved the cases by level",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.RatingSpecialistFul"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input data or bad query parameter",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "JWT is invalid or expired",
+                        "schema": {
+                            "$ref": "#/definitions/responses.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "User is unverified",
                         "schema": {
                             "$ref": "#/definitions/responses.MessageResponse"
                         }
@@ -804,42 +863,13 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Case": {
-            "type": "object",
-            "properties": {
-                "camera_id": {
-                    "type": "string"
-                },
-                "datetime": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "level": {
-                    "type": "integer"
-                },
-                "photo_url": {
-                    "type": "string"
-                },
-                "transport": {
-                    "type": "string"
-                },
-                "violation_id": {
-                    "type": "string"
-                },
-                "violation_value": {
-                    "type": "string"
-                }
-            }
-        },
         "models.CaseCursor": {
             "type": "object",
             "properties": {
                 "cases": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Case"
+                        "$ref": "#/definitions/models.CaseViolations"
                     }
                 },
                 "cursor": {
@@ -853,8 +883,17 @@ const docTemplate = `{
                 "amount": {
                     "type": "integer"
                 },
+                "camera_id": {
+                    "type": "string"
+                },
+                "current_level": {
+                    "type": "integer"
+                },
                 "datetime": {
                     "type": "string"
+                },
+                "is_solved": {
+                    "type": "boolean"
                 },
                 "level": {
                     "type": "integer"
@@ -872,6 +911,47 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                },
+                "violation_id": {
+                    "type": "string"
+                },
+                "violation_value": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CaseViolations": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "camera_id": {
+                    "type": "string"
+                },
+                "current_level": {
+                    "type": "integer"
+                },
+                "datetime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "transport": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "violation_id": {
                     "type": "string"
                 },
                 "violation_value": {
@@ -900,6 +980,12 @@ const docTemplate = `{
                 "case_id"
             ],
             "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "camera_id": {
+                    "type": "string"
+                },
                 "case_id": {
                     "type": "integer"
                 },
@@ -912,10 +998,22 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "level": {
+                    "type": "integer"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
                 "specialist_id": {
                     "type": "integer"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "violation_value": {
                     "type": "string"
                 }
             }
@@ -937,6 +1035,9 @@ const docTemplate = `{
                 },
                 "photo_url": {
                     "$ref": "#/definitions/null.String"
+                },
+                "row": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "string"
@@ -989,6 +1090,9 @@ const docTemplate = `{
                 "photo_url": {
                     "$ref": "#/definitions/null.String"
                 },
+                "row": {
+                    "type": "integer"
+                },
                 "total": {
                     "type": "integer"
                 },
@@ -1008,6 +1112,23 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.RatingSpecialistCount"
                     }
+                }
+            }
+        },
+        "models.RatingSpecialistFul": {
+            "type": "object",
+            "properties": {
+                "fullname": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "rating": {
+                    "$ref": "#/definitions/null.Float"
+                },
+                "specialistID": {
+                    "type": "integer"
                 }
             }
         },
@@ -1038,6 +1159,9 @@ const docTemplate = `{
                 },
                 "photoUrl": {
                     "$ref": "#/definitions/null.String"
+                },
+                "row": {
+                    "type": "integer"
                 }
             }
         },
@@ -1053,6 +1177,18 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "null.Float": {
+            "type": "object",
+            "properties": {
+                "float64": {
+                    "type": "number"
+                },
+                "valid": {
+                    "description": "Valid is true if Float64 is not NULL",
+                    "type": "boolean"
                 }
             }
         },

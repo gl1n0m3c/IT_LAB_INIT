@@ -14,30 +14,11 @@ definitions:
     - description
     - type
     type: object
-  models.Case:
-    properties:
-      camera_id:
-        type: string
-      datetime:
-        type: string
-      id:
-        type: integer
-      level:
-        type: integer
-      photo_url:
-        type: string
-      transport:
-        type: string
-      violation_id:
-        type: string
-      violation_value:
-        type: string
-    type: object
   models.CaseCursor:
     properties:
       cases:
         items:
-          $ref: '#/definitions/models.Case'
+          $ref: '#/definitions/models.CaseViolations'
         type: array
       cursor:
         $ref: '#/definitions/null.Int'
@@ -46,8 +27,14 @@ definitions:
     properties:
       amount:
         type: integer
+      camera_id:
+        type: string
+      current_level:
+        type: integer
       datetime:
         type: string
+      is_solved:
+        type: boolean
       level:
         type: integer
       photo_url:
@@ -59,6 +46,33 @@ definitions:
       transport:
         type: string
       type:
+        type: string
+      violation_id:
+        type: string
+      violation_value:
+        type: string
+    type: object
+  models.CaseViolations:
+    properties:
+      amount:
+        type: integer
+      camera_id:
+        type: string
+      current_level:
+        type: integer
+      datetime:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      photo_url:
+        type: string
+      transport:
+        type: string
+      type:
+        type: string
+      violation_id:
         type: string
       violation_value:
         type: string
@@ -75,6 +89,10 @@ definitions:
     type: object
   models.Rated:
     properties:
+      amount:
+        type: integer
+      camera_id:
+        type: string
       case_id:
         type: integer
       choice:
@@ -83,9 +101,17 @@ definitions:
         type: string
       id:
         type: integer
+      level:
+        type: integer
+      photo_url:
+        type: string
       specialist_id:
         type: integer
       status:
+        type: string
+      type:
+        type: string
+      violation_value:
         type: string
     required:
     - case_id
@@ -102,6 +128,8 @@ definitions:
         type: integer
       photo_url:
         $ref: '#/definitions/null.String'
+      row:
+        type: integer
       status:
         type: string
     type: object
@@ -135,6 +163,8 @@ definitions:
         type: integer
       photo_url:
         $ref: '#/definitions/null.String'
+      row:
+        type: integer
       total:
         type: integer
       unknown:
@@ -148,6 +178,17 @@ definitions:
         items:
           $ref: '#/definitions/models.RatingSpecialistCount'
         type: array
+    type: object
+  models.RatingSpecialistFul:
+    properties:
+      fullname:
+        type: string
+      level:
+        type: integer
+      rating:
+        $ref: '#/definitions/null.Float'
+      specialistID:
+        type: integer
     type: object
   models.Specialist:
     properties:
@@ -165,6 +206,8 @@ definitions:
         type: string
       photoUrl:
         $ref: '#/definitions/null.String'
+      row:
+        type: integer
     required:
     - login
     - password
@@ -178,6 +221,14 @@ definitions:
     required:
     - login
     - password
+    type: object
+  null.Float:
+    properties:
+      float64:
+        type: number
+      valid:
+        description: Valid is true if Float64 is not NULL
+        type: boolean
     type: object
   null.Int:
     properties:
@@ -224,8 +275,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves a case by its ID and returns detailed information about
-        the case.
+      description: |-
+        Retrieves a case by its ID and returns detailed information about the case.
+        Field `rated_covers` could be null if there are no ratings
       parameters:
       - default: Bearer <Add access token here>
         description: Insert your access token
@@ -585,9 +637,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves cases based on the provided cursor ID and the user's
-        ID. It returns cases that match the level of difficulty or rating specified
-        for the user.
+      description: |-
+        Retrieves cases based on the provided cursor ID and the user's ID. It returns cases that match the level of difficulty or rating specified for the user.
+        Returned cursor can be only int or null. It depends on existence of cases.
       parameters:
       - description: Cursor ID for pagination
         in: query
@@ -655,6 +707,45 @@ paths:
             $ref: '#/definitions/responses.MessageResponse'
         "401":
           description: JWT is invalid or expired
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+      tags:
+      - specialists
+  /specialist/get_rating:
+    get:
+      consumes:
+      - application/json
+      description: Give specialists rating
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved the cases by level
+          schema:
+            items:
+              $ref: '#/definitions/models.RatingSpecialistFul'
+            type: array
+        "400":
+          description: Invalid input data or bad query parameter
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "401":
+          description: JWT is invalid or expired
+          schema:
+            $ref: '#/definitions/responses.MessageResponse'
+        "403":
+          description: User is unverified
           schema:
             $ref: '#/definitions/responses.MessageResponse'
         "500":

@@ -19,3 +19,10 @@ type RatingSpecialistID struct {
 	Level  int
 	Rating float32
 }
+
+type RatingSpecialistFul struct {
+	SpecialistID int
+	Level        int
+	Fullname     string
+	Rating       null.Float
+}

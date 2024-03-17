@@ -16,7 +16,8 @@ type Specialists interface {
 	GetByID(ctx context.Context, specialistID int) (models.Specialist, error)
 	GetByLogin(ctx context.Context, specialistLogin string) (models.Specialist, error)
 	GetSpecialistRating(ctx context.Context, timeStart, timeEnd time.Time, cursor int) (models.RatingSpecialistCountCursor, error)
-	GetRating(timeStart, timeEnd time.Time) ([]models.RatingSpecialistID, error)
+	GetFulRating(ctx context.Context) ([]models.RatingSpecialistFul, error)
+	GetOnlyRating(timeStart, timeEnd time.Time) ([]models.RatingSpecialistID, error)
 	UpdateSpecialistsIncDecLevel(incrementIDs, decrementIDs []int) error
 	UpdateMain(ctx context.Context, specialistUpdate models.Specialist, newPasswordFlag bool) error
 	Delete(ctx context.Context, specialistID int) error

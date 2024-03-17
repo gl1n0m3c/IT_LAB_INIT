@@ -25,6 +25,7 @@ type Specialists interface {
 	GetMe(c *gin.Context)
 	UpdateMe(c *gin.Context)
 
+	GetRating(c *gin.Context)
 	GetCasesByLevel(c *gin.Context)
 
 	CreateRated(c *gin.Context)

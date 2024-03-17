@@ -20,6 +20,7 @@ func InitSpecialistsRouting(group *gin.RouterGroup, db *sqlx.DB, session databas
 	group.GET("/me", specialistHandler.GetMe)
 	group.PUT("/update", specialistHandler.UpdateMe)
 
+	group.GET("/get_rating", specialistHandler.GetRating)
 	group.GET("/get_cases_by_level", specialistHandler.GetCasesByLevel)
 
 	group.POST("/create_rated", specialistHandler.CreateRated)

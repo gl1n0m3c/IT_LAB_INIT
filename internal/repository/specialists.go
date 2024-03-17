@@ -151,7 +151,41 @@ func (s specialistsRepo) GetSpecialistRating(ctx context.Context, timeStart, tim
 	return specialistsCursor, nil
 }
 
-func (s specialistsRepo) GetRating(timeStart, timeEnd time.Time) ([]models.RatingSpecialistID, error) {
+func (s specialistsRepo) GetFulRating(ctx context.Context) ([]models.RatingSpecialistFul, error) {
+	var specialistsRating []models.RatingSpecialistFul
+
+	getRatingQuery := `SELECT s.id, s.level, s.fullname,
+					       COUNT(CASE WHEN rc.status = 'Correct' THEN 1 END) * 1.0 / NULLIF(COUNT(rc.id), 0) AS rating
+					   FROM specialists s
+					   LEFT JOIN rated_cases rc ON s.id = rc.specialist_id
+					   GROUP BY s.id, s.level, s.fullname
+					   ORDER BY rating DESC, COUNT(CASE WHEN rc.status = 'Correct' THEN 1 END);`
+
+	rows, err := s.db.QueryxContext(ctx, getRatingQuery)
+	if err != nil {
+		return []models.RatingSpecialistFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.QueryRrr, Err: err})
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var specialistRating models.RatingSpecialistFul
+
+		err := rows.Scan(&specialistRating.SpecialistID, &specialistRating.Level, &specialistRating.Fullname, &specialistRating.Rating)
+		if err != nil {
+			return []models.RatingSpecialistFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
+
+		specialistsRating = append(specialistsRating, specialistRating)
+	}
+
+	if err := rows.Err(); err != nil {
+		return []models.RatingSpecialistFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
+	}
+
+	return specialistsRating, nil
+}
+
+func (s specialistsRepo) GetOnlyRating(timeStart, timeEnd time.Time) ([]models.RatingSpecialistID, error) {
 	var ratings []models.RatingSpecialistID
 
 	getRatingQuery := `SELECT s.id, s.level, COUNT(CASE WHEN rc.status = 'Correct' THEN 1 END) * 1.0 / COUNT(rc.id) AS rating
@@ -176,6 +210,10 @@ func (s specialistsRepo) GetRating(timeStart, timeEnd time.Time) ([]models.Ratin
 		}
 
 		ratings = append(ratings, rating)
+	}
+
+	if err := rows.Err(); err != nil {
+		return []models.RatingSpecialistID{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
 	}
 
 	return ratings, nil

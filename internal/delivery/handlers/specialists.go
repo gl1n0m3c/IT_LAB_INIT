@@ -149,6 +149,31 @@ func (s specialistsHandler) GetCasesByLevel(c *gin.Context) {
 	c.JSON(http.StatusOK, cases)
 }
 
+// GetRating @Summary Give specialists rating
+// @Description Give specialists rating
+// @Tags specialists
+// @Accept  json
+// @Produce  json
+// @Param authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success 200 {object} []models.RatingSpecialistFul "Successfully retrieved the cases by level"
+// @Failure 400 {object} responses.MessageResponse "Invalid input data or bad query parameter"
+// @Failure 401 {object} responses.MessageResponse "JWT is invalid or expired"
+// @Failure 403 {object} responses.MessageResponse "User is unverified"
+// @Failure 500 {object} responses.MessageResponse "Internal server error"
+// @Router /specialist/get_rating [get]
+func (s specialistsHandler) GetRating(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	rating, err := s.service.GetRating(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
+		return
+
+	}
+
+	c.JSON(http.StatusOK, rating)
+}
+
 // GetRatedSolved @Summary Get rated solved
 // @Description Retrieves a rated solved entry based on the provided cursor ID.
 // @Tags specialists

@@ -28,6 +28,7 @@ type Specialists interface {
 	GetMe(ctx context.Context, specialistID int) (models.Specialist, error)
 	UpdateMe(ctx context.Context, specialistUpdate models.SpecialistUpdate) error
 
+	GetRating(ctx context.Context) ([]models.RatingSpecialistFul, error)
 	GetCasesByLevel(ctx context.Context, specialistID, cursor int) (models.CaseCursor, error)
 
 	CreateRated(ctx context.Context, rated models.RatedBase) (int, error)

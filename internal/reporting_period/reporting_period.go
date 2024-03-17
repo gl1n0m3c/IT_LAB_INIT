@@ -28,7 +28,7 @@ func StartReporting(db *sqlx.DB, logger *log.Logs) {
 			var specialistIncrementIDs []int
 			var specialistDecrementIDs []int
 
-			rating, err := specialistsRepo.GetRating(timeStart, timeEnd)
+			rating, err := specialistsRepo.GetOnlyRating(timeStart, timeEnd)
 			if err != nil {
 				logger.ErrorLogger.Error().Msg(fmt.Sprintf("Ошибка при обновлении уровней специалистов:", err))
 			}

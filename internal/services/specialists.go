@@ -54,6 +54,21 @@ func (s specialistService) GetMe(ctx context.Context, specialistID int) (models.
 	return specialist, nil
 }
 
+func (s specialistService) GetRating(ctx context.Context) ([]models.RatingSpecialistFul, error) {
+	ctx, cansel := context.WithTimeout(ctx, s.dbResponseTime)
+	defer cansel()
+
+	rating, err := s.specialistRepo.GetFulRating(ctx)
+	if err != nil {
+		s.logger.ErrorLogger.Error().Msg(err.Error())
+		return []models.RatingSpecialistFul{}, err
+	}
+
+	s.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessGet, "specialists_rating"))
+
+	return rating, nil
+}
+
 func (s specialistService) UpdateMe(ctx context.Context, specialistUpdate models.SpecialistUpdate) error {
 	var passwordFlag bool
 
