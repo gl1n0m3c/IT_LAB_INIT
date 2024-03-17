@@ -34,6 +34,9 @@ const (
 	MailPassword = "MAIL_PASSWORD"
 	MailHost     = "MAIL_HOST"
 	MailPort     = "MAIL_PORT"
+
+	JaegerHost = "JAEGER_HOST"
+	JaegerPort = "JAEGER_PORT"
 )
 
 func InitConfig() {

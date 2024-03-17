@@ -9,16 +9,17 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/log"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/jwt"
 	"github.com/jmoiron/sqlx"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func InitPublicRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Session, JWTUtil jwt.JWT, logger *log.Logs) {
+func InitPublicRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Session, JWTUtil jwt.JWT, logger *log.Logs, tracer trace.Tracer) {
 	managerRepo := repository.InitManagerRepo(db)
 	specialistRepo := repository.InitSpecialistsRepo(db)
 	cameraRepo := repository.InitCameraRepo(db)
 	caseRepo := repository.InitCaseRepo(db)
 
 	publicService := services.InitPublicService(managerRepo, specialistRepo, cameraRepo, caseRepo, logger)
-	publicHandler := handlers.InitPublicHandler(publicService, session, JWTUtil)
+	publicHandler := handlers.InitPublicHandler(publicService, session, JWTUtil, tracer)
 
 	group.POST("/manager_login", publicHandler.ManagerLogin)
 

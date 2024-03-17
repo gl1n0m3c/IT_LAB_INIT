@@ -2,10 +2,15 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/services"
+	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/tracing"
 	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/responses"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,13 +18,16 @@ import (
 
 type managerHandler struct {
 	service services.Managers
+	tracer  trace.Tracer
 }
 
 func InitManagerHandler(
 	service services.Managers,
+	tracer trace.Tracer,
 ) Managers {
 	return managerHandler{
 		service: service,
+		tracer:  tracer,
 	}
 }
 
@@ -37,21 +45,39 @@ func InitManagerHandler(
 // @Failure 500 {object} responses.MessageResponse "Internal server error"
 // @Router /manager/get_case [get]
 func (m managerHandler) GetFulCaseByID(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, span := m.tracer.Start(c.Request.Context(), tracing.GetFulCaseByID)
+	defer span.End()
 
 	caseIDStr, ok := c.GetQuery("case_id")
 	if !ok {
+		er := fmt.Errorf("bad `case_id` query provided")
+		span.RecordError(er, trace.WithAttributes(
+			attribute.String(tracing.QueryType, er.Error())),
+		)
+		span.SetStatus(codes.Error, er.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadQuery))
 		return
 	}
+
 	caseID, err := strconv.Atoi(caseIDStr)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.QueryType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadQuery))
 		return
 	}
 
 	caseData, err := m.service.GetFulCaseByID(ctx, caseID)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.GetFulCaseByIDType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		if errors.Is(err, customErrors.NoRowsCaseErr) {
 			c.JSON(http.StatusNotFound, responses.NewMessageResponse(err.Error()))
 			return
@@ -59,6 +85,8 @@ func (m managerHandler) GetFulCaseByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.JSON(http.StatusOK, caseData)
 }
@@ -79,50 +107,100 @@ func (m managerHandler) GetFulCaseByID(c *gin.Context) {
 // @Failure 500 {object} responses.MessageResponse "Internal server error"
 // @Router /manager/get_specialists_rating [get]
 func (m managerHandler) GetSpecialistRating(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, span := m.tracer.Start(c.Request.Context(), tracing.GetSpecialistRating)
+	defer span.End()
 
 	cursorStr, ok := c.GetQuery("cursor")
 	if !ok {
+		er := fmt.Errorf("bad `cursor` query provided")
+		span.RecordError(er, trace.WithAttributes(
+			attribute.String(tracing.QueryType, er.Error())),
+		)
+		span.SetStatus(codes.Error, er.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadQuery))
 		return
 	}
+
 	cursor, err := strconv.Atoi(cursorStr)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.QueryType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadQuery))
 		return
 	}
 
 	timeFromStr, ok := c.GetQuery("time_from")
 	if !ok {
+		er := fmt.Errorf("bad `time_from` query provided")
+		span.RecordError(er, trace.WithAttributes(
+			attribute.String(tracing.QueryType, er.Error())),
+		)
+		span.SetStatus(codes.Error, er.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadQuery))
 		return
 	}
+
 	timeToStr, ok := c.GetQuery("time_to")
 	if !ok {
+		er := fmt.Errorf("bad `time_to` query provided")
+		span.RecordError(er, trace.WithAttributes(
+			attribute.String(tracing.QueryType, er.Error())),
+		)
+		span.SetStatus(codes.Error, er.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadQuery))
 		return
 	}
+
 	timeFrom, err := time.Parse(time.RFC3339, timeFromStr)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.TimeFormatType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadTime))
 		return
 	}
+
 	timeTo, err := time.Parse(time.RFC3339, timeToStr)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.TimeFormatType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadTime))
 		return
 	}
 
 	if timeFrom.After(timeTo) || timeFrom.After(time.Now()) {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.TimeFormatType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadTime))
 		return
 	}
 
 	specialists, err := m.service.GetSpecialistRating(ctx, timeFrom, timeTo, cursor)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.GetSpecialistRatingType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.JSON(http.StatusOK, specialists)
 }

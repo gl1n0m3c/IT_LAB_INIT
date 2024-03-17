@@ -10,10 +10,14 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/config"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/database"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/log"
+	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/tracing"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/jwt"
+	"github.com/spf13/viper"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+const serviceName = "admin-panel"
 
 func main() {
 	router := gin.Default()
@@ -42,8 +46,12 @@ func main() {
 	logger.InfoLogger.Info().Msg("Swagger Initialized")
 
 	middleWarrior := middleware.InitMiddleware(JWTUtil, logger)
+	logger.InfoLogger.Info().Msg("Middleware Initialized")
 
-	routers.InitRouting(router, db, session, JWTUtil, middleWarrior, logger)
+	jaegerURL := fmt.Sprintf("http://%v:%v/api/traces", viper.GetString(config.JaegerHost), viper.GetString(config.JaegerPort))
+	tracer := tracing.InitTracer(jaegerURL, serviceName)
+
+	routers.InitRouting(router, db, session, JWTUtil, middleWarrior, logger, tracer)
 	logger.InfoLogger.Info().Msg("Routing Initialized")
 
 	// Для загрузки тестовых данных

@@ -10,6 +10,7 @@ import (
 	_ "github.com/gl1n0m3c/IT_LAB_INIT/internal/models/swagger"
 	"github.com/gl1n0m3c/IT_LAB_INIT/internal/services"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/database"
+	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/tracing"
 	customErrors "github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/customerr"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/jwt"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/utils/responses"
@@ -17,6 +18,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
 	"github.com/guregu/null"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -26,17 +30,20 @@ type publicHandler struct {
 	service services.Public
 	session database.Session
 	JWTUtil jwt.JWT
+	tracer  trace.Tracer
 }
 
 func InitPublicHandler(
 	service services.Public,
 	session database.Session,
 	JWTUtil jwt.JWT,
+	tracer trace.Tracer,
 ) Public {
 	return publicHandler{
 		service: service,
 		session: session,
 		JWTUtil: JWTUtil,
+		tracer:  tracer,
 	}
 }
 
@@ -54,9 +61,15 @@ func InitPublicHandler(
 func (p publicHandler) ManagerLogin(c *gin.Context) {
 	var manager models.ManagerBase
 
-	ctx := c.Request.Context()
+	ctx, span := p.tracer.Start(c.Request.Context(), tracing.ManagerLogin)
+	defer span.End()
 
 	if err := c.ShouldBindJSON(&manager); err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.BindType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(fmt.Sprintf(responses.Response400, err)))
 		return
 	}
@@ -64,13 +77,24 @@ func (p publicHandler) ManagerLogin(c *gin.Context) {
 	validate := validator.New()
 	if err := validate.Struct(manager); err != nil {
 		customErrMsg := validators.CustomErrorMessage(err)
+
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.ValidationType, customErrMsg)),
+		)
+		span.SetStatus(codes.Error, customErrMsg)
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
 		return
 	}
 
 	success, specialistData, err := p.service.ManagerLogin(ctx, manager)
 	if err != nil {
-		if err == customErrors.NoRowsSpecialistLoginErr {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.ManagerLoginType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
+		if errors.Is(err, customErrors.NoRowsSpecialistLoginErr) {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
 		}
@@ -79,6 +103,11 @@ func (p publicHandler) ManagerLogin(c *gin.Context) {
 	}
 
 	if !success {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.AccessType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse("Неверный пароль"))
 		return
 	}
@@ -91,9 +120,16 @@ func (p publicHandler) ManagerLogin(c *gin.Context) {
 	})
 
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.SessionType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.JSON(http.StatusCreated, responses.NewJWTRefreshResponse(accessToken, refreshToken))
 }
@@ -116,7 +152,8 @@ func (p publicHandler) ManagerLogin(c *gin.Context) {
 // @Failure 500 {object} responses.MessageResponse "Internal server error"
 // @Router /public/specialist_register [post]
 func (p publicHandler) SpecialistRegister(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, span := p.tracer.Start(c.Request.Context(), tracing.SpecialistRegister)
+	defer span.End()
 
 	login := c.PostForm("login")
 	password := c.PostForm("password")
@@ -134,6 +171,12 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 	_ = validate.RegisterValidation("password", validators.ValidatePassword)
 	if err := validate.Struct(specialist); err != nil {
 		customErrMsg := validators.CustomErrorMessage(err)
+
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.ValidationType, customErrMsg)),
+		)
+		span.SetStatus(codes.Error, customErrMsg)
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
 		return
 	}
@@ -142,6 +185,11 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 		if errors.Is(err, http.ErrMissingFile) {
 			specialist.PhotoUrl = null.NewString("", false)
 		} else {
+			span.RecordError(err, trace.WithAttributes(
+				attribute.String(tracing.FileType, err.Error())),
+			)
+			span.SetStatus(codes.Error, err.Error())
+
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
 		}
@@ -149,24 +197,44 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 		// Проверка на ограничение по размеру файла на 2МБ
 		err := c.Request.ParseMultipartForm(2 << 20)
 		if err != nil {
+			span.RecordError(err, trace.WithAttributes(
+				attribute.String(tracing.FileType, err.Error())),
+			)
+			span.SetStatus(codes.Error, err.Error())
+
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadFileSize))
 			return
 		}
 
 		// Проверка на допустимый тип `Content-Type` и расширение
 		if !validators.ValidateFileTypeExtension(file) {
+			span.RecordError(err, trace.WithAttributes(
+				attribute.String(tracing.FileType, err.Error())),
+			)
+			span.SetStatus(codes.Error, err.Error())
+
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadPhotoFile))
 			return
 		}
 
 		uuidBytes, err := uuid.NewV4()
 		if err != nil {
+			span.RecordError(err, trace.WithAttributes(
+				attribute.String(tracing.InternalErr, err.Error())),
+			)
+			span.SetStatus(codes.Error, err.Error())
+
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
 		}
 		uniqueFileName := uuidBytes.String() + filepath.Ext(file.Filename)
 		filePath := fmt.Sprintf("/static/img/specialists/%s", uniqueFileName)
 		if err := c.SaveUploadedFile(file, ".."+filePath); err != nil {
+			span.RecordError(err, trace.WithAttributes(
+				attribute.String(tracing.InternalErr, err.Error())),
+			)
+			span.SetStatus(codes.Error, err.Error())
+
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 			return
 		}
@@ -175,6 +243,11 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 
 	ID, err := p.service.SpecialistRegister(ctx, specialist)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.SpecialistRegisterType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		if errors.Is(err, customErrors.UniqueSpecialistErr) {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
@@ -189,9 +262,16 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 		UserType: jwt.Specialist,
 	})
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.SessionType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.JSON(http.StatusCreated, responses.NewJWTRefreshResponse(accessToken, refreshToken))
 }
@@ -210,9 +290,15 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 func (p publicHandler) SpecialistLogin(c *gin.Context) {
 	var specialistLogin models.SpecialistLogin
 
-	ctx := c.Request.Context()
+	ctx, span := p.tracer.Start(c.Request.Context(), tracing.SpecialistLogin)
+	defer span.End()
 
 	if err := c.ShouldBindJSON(&specialistLogin); err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.BindType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(fmt.Sprintf(responses.Response400, err)))
 		return
 	}
@@ -220,12 +306,23 @@ func (p publicHandler) SpecialistLogin(c *gin.Context) {
 	validate := validator.New()
 	if err := validate.Struct(specialistLogin); err != nil {
 		customErrMsg := validators.CustomErrorMessage(err)
+
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.ValidationType, customErrMsg)),
+		)
+		span.SetStatus(codes.Error, customErrMsg)
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
 		return
 	}
 
 	success, specialistData, err := p.service.SpecialistLogin(ctx, specialistLogin)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.SpecialistLoginType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		if errors.Is(err, customErrors.NoRowsSpecialistLoginErr) {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
@@ -247,9 +344,16 @@ func (p publicHandler) SpecialistLogin(c *gin.Context) {
 	})
 
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.SessionType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.JSON(http.StatusCreated, responses.NewJWTRefreshResponse(accessToken, refreshToken))
 }
@@ -268,9 +372,15 @@ func (p publicHandler) SpecialistLogin(c *gin.Context) {
 func (p publicHandler) CameraCreate(c *gin.Context) {
 	var camera models.CameraBase
 
-	ctx := c.Request.Context()
+	ctx, span := p.tracer.Start(c.Request.Context(), tracing.CameraCreate)
+	defer span.End()
 
 	if err := c.ShouldBindJSON(&camera); err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.BindType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(fmt.Sprintf(responses.Response400, err)))
 		return
 	}
@@ -278,15 +388,28 @@ func (p publicHandler) CameraCreate(c *gin.Context) {
 	validate := validator.New()
 	if err := validate.Struct(camera); err != nil {
 		customErrMsg := validators.CustomErrorMessage(err)
+
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.ValidationType, customErrMsg)),
+		)
+		span.SetStatus(codes.Error, customErrMsg)
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(customErrMsg))
 		return
 	}
 
 	createdCameraID, err := p.service.CameraCreate(ctx, camera)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.CameraCreateType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.JSON(http.StatusCreated, responses.CreationStringResponse{ID: createdCameraID})
 }
@@ -303,16 +426,28 @@ func (p publicHandler) CameraCreate(c *gin.Context) {
 // @Failure 500 {object} responses.MessageResponse "Internal server error"
 // @Router /public/camera_delete [delete]
 func (p publicHandler) CameraDelete(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, span := p.tracer.Start(c.Request.Context(), tracing.CameraDelete)
+	defer span.End()
 
 	cameraID, ok := c.GetQuery("id")
 	if !ok {
+		er := fmt.Errorf("bad `id` query provided")
+		span.RecordError(er, trace.WithAttributes(
+			attribute.String(tracing.QueryType, er.Error())),
+		)
+		span.SetStatus(codes.Error, er.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse("ID камеры не указан"))
 		return
 	}
 
 	err := p.service.CameraDelete(ctx, cameraID)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.CameraDeleteType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		if errors.Is(err, customErrors.NoRowsCameraErr) {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 			return
@@ -320,6 +455,8 @@ func (p publicHandler) CameraDelete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.Status(http.StatusNoContent)
 }
@@ -337,11 +474,17 @@ func (p publicHandler) CameraDelete(c *gin.Context) {
 // @Failure 500 {object} responses.MessageResponse "Internal server error"
 // @Router /public/case_create [post]
 func (p publicHandler) CaseCreate(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, span := p.tracer.Start(c.Request.Context(), tracing.CaseCreate)
+	defer span.End()
 
 	file, err := c.FormFile("photo")
 	if err != nil {
-		if err == http.ErrMissingFile {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.FileType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
+		if errors.Is(err, http.ErrMissingFile) {
 			c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseNoPhotoProvided))
 			return
 		} else {
@@ -352,18 +495,33 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 
 	// Проверка на допустимый тип `Content-Type` и расширение
 	if !validators.ValidateFileTypeExtension(file) {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.FileType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadPhotoFile))
 		return
 	}
 
 	uuidBytes, err := uuid.NewV4()
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.InternalErr, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
 	uniqueFileName := uuidBytes.String() + filepath.Ext(file.Filename)
 	filePath := fmt.Sprintf("/static/img/cases/%s", uniqueFileName)
 	if err := c.SaveUploadedFile(file, ".."+filePath); err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.InternalErr, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
@@ -379,6 +537,11 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 		byteString := bitString[i : i+8]
 		byteValue, err := strconv.ParseUint(byteString, 2, 8)
 		if err != nil {
+			span.RecordError(err, trace.WithAttributes(
+				attribute.String(tracing.InternalErr, err.Error())),
+			)
+			span.SetStatus(codes.Error, err.Error())
+
 			c.JSON(http.StatusInternalServerError, responses.NewMessageResponse("Ошибка при преобразовании битовой строки в байты"))
 			return
 		}
@@ -392,18 +555,33 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 
 	result, err := decoder.Decoder(bytes.NewBuffer(dataBytes[2:]))
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.DecoderType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(responses.ResponseBadByteString))
 		return
 	}
 
 	cameraType, err := decoder.MapToStruct(result)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.DecoderType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 		return
 	}
 
 	caseData, err := cameraType.CameraDataToCaseBase()
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.DecoderType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusBadRequest, responses.NewMessageResponse(err.Error()))
 		return
 	}
@@ -411,9 +589,16 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 
 	createdCaseID, err := p.service.CaseCreate(ctx, caseData)
 	if err != nil {
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.CaseCreateType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
 		c.JSON(http.StatusInternalServerError, responses.NewMessageResponse(responses.Response500))
 		return
 	}
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.JSON(http.StatusCreated, responses.CreationIntResponse{ID: createdCaseID})
 }
@@ -437,12 +622,18 @@ func (p publicHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	ctx := c.Request.Context()
+	ctx, span := p.tracer.Start(c.Request.Context(), tracing.Refresh)
+	defer span.End()
 
 	newRefreshToken, userData, err := p.session.GetAndUpdate(ctx, oldRefreshToken)
 	if err != nil {
-		switch err {
-		case customErrors.NeedToAuthorizeErr:
+		span.RecordError(err, trace.WithAttributes(
+			attribute.String(tracing.RefreshType, err.Error())),
+		)
+		span.SetStatus(codes.Error, err.Error())
+
+		switch {
+		case errors.Is(err, customErrors.NeedToAuthorizeErr):
 			c.JSON(http.StatusUnauthorized, responses.NewMessageResponse(err.Error()))
 			return
 		default:
@@ -452,6 +643,8 @@ func (p publicHandler) Refresh(c *gin.Context) {
 	}
 
 	newAccessToken := p.JWTUtil.CreateToken(userData.UserID, userData.UserType)
+
+	span.SetStatus(codes.Ok, tracing.SuccessfulCompleting)
 
 	c.JSON(http.StatusOK, responses.NewJWTRefreshResponse(newAccessToken, newRefreshToken))
 }

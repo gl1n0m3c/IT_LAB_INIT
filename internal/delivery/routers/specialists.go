@@ -8,14 +8,15 @@ import (
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/database"
 	"github.com/gl1n0m3c/IT_LAB_INIT/pkg/log"
 	"github.com/jmoiron/sqlx"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func InitSpecialistsRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Session, logger *log.Logs) {
+func InitSpecialistsRouting(group *gin.RouterGroup, db *sqlx.DB, session database.Session, logger *log.Logs, tracer trace.Tracer) {
 	specialistRepo := repository.InitSpecialistsRepo(db)
 	caseRepo := repository.InitCaseRepo(db)
 
 	specialistService := services.InitSpecialistService(specialistRepo, caseRepo, logger)
-	specialistHandler := handlers.InitSpecialistsHandler(specialistService, session)
+	specialistHandler := handlers.InitSpecialistsHandler(specialistService, session, tracer)
 
 	group.GET("/me", specialistHandler.GetMe)
 	group.PUT("/update", specialistHandler.UpdateMe)

@@ -20,6 +20,10 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.3
 	github.com/xuri/excelize/v2 v2.8.1
+	go.opentelemetry.io/otel v1.24.0
+	go.opentelemetry.io/otel/exporters/jaeger v1.17.0
+	go.opentelemetry.io/otel/sdk v1.24.0
+	go.opentelemetry.io/otel/trace v1.24.0
 	golang.org/x/crypto v0.21.0
 )
 
@@ -39,6 +43,8 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.6.1 // indirect
+	github.com/go-logr/logr v1.4.1 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.20.2 // indirect
 	github.com/go-openapi/jsonreference v0.20.4 // indirect
 	github.com/go-openapi/spec v0.20.14 // indirect
@@ -81,8 +87,7 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/xuri/efp v0.0.0-20231025114914-d1ff6096ae53 // indirect
 	github.com/xuri/nfp v0.0.0-20230919160717-d98342af3f05 // indirect
-	go.opentelemetry.io/otel v1.22.0 // indirect
-	go.opentelemetry.io/otel/trace v1.22.0 // indirect
+	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a // indirect
