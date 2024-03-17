@@ -89,6 +89,7 @@ func (s specialistsHandler) CreateRated(c *gin.Context) {
 	rated.Date = time.Now().UTC()
 	rated.Status = "Unknown"
 
+	span.AddEvent(tracing.CallToService)
 	createdRatedID, err := s.service.CreateRated(ctx, rated)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -169,6 +170,7 @@ func (s specialistsHandler) GetCasesByLevel(c *gin.Context) {
 
 	userID := c.GetInt("userID")
 
+	span.AddEvent(tracing.CallToService)
 	cases, err := s.service.GetCasesByLevel(ctx, userID, cursor)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -210,6 +212,7 @@ func (s specialistsHandler) GetRating(c *gin.Context) {
 	ctx, span := s.tracer.Start(c.Request.Context(), tracing.GetRating)
 	defer span.End()
 
+	span.AddEvent(tracing.CallToService)
 	rating, err := s.service.GetRating(ctx)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -267,6 +270,7 @@ func (s specialistsHandler) GetRatedSolved(c *gin.Context) {
 
 	userID := c.GetInt("userID")
 
+	span.AddEvent(tracing.CallToService)
 	ratedCursor, err := s.service.GetRatedSolved(ctx, userID, cursor)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -309,6 +313,7 @@ func (s specialistsHandler) GetMe(c *gin.Context) {
 
 	userID := c.GetInt("userID")
 
+	span.AddEvent(tracing.CallToService)
 	specialist, err := s.service.GetMe(ctx, userID)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -437,6 +442,7 @@ func (s specialistsHandler) UpdateMe(c *gin.Context) {
 		updateSpecialistData.PhotoUrl = filePath
 	}
 
+	span.AddEvent(tracing.CallToService)
 	err := s.service.UpdateMe(ctx, updateSpecialistData)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(

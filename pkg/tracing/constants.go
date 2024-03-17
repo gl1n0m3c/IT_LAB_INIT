@@ -34,6 +34,8 @@ const (
 )
 
 const (
+	CallToService = "Call to service"
+
 	// Managers
 	GetFulCaseByID      = "Get ful case info by it's id"
 	GetSpecialistRating = "Get specialist rating"

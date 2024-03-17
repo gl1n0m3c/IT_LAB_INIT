@@ -71,6 +71,7 @@ func (m managerHandler) GetFulCaseByID(c *gin.Context) {
 		return
 	}
 
+	span.AddEvent(tracing.CallToService)
 	caseData, err := m.service.GetFulCaseByID(ctx, caseID)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -189,6 +190,7 @@ func (m managerHandler) GetSpecialistRating(c *gin.Context) {
 		return
 	}
 
+	span.AddEvent(tracing.CallToService)
 	specialists, err := m.service.GetSpecialistRating(ctx, timeFrom, timeTo, cursor)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(

@@ -87,6 +87,7 @@ func (p publicHandler) ManagerLogin(c *gin.Context) {
 		return
 	}
 
+	span.AddEvent(tracing.CallToService)
 	success, specialistData, err := p.service.ManagerLogin(ctx, manager)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -241,6 +242,7 @@ func (p publicHandler) SpecialistRegister(c *gin.Context) {
 		specialist.PhotoUrl = null.NewString(filePath, true)
 	}
 
+	span.AddEvent(tracing.CallToService)
 	ID, err := p.service.SpecialistRegister(ctx, specialist)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -316,6 +318,7 @@ func (p publicHandler) SpecialistLogin(c *gin.Context) {
 		return
 	}
 
+	span.AddEvent(tracing.CallToService)
 	success, specialistData, err := p.service.SpecialistLogin(ctx, specialistLogin)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -398,6 +401,7 @@ func (p publicHandler) CameraCreate(c *gin.Context) {
 		return
 	}
 
+	span.AddEvent(tracing.CallToService)
 	createdCameraID, err := p.service.CameraCreate(ctx, camera)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -441,6 +445,7 @@ func (p publicHandler) CameraDelete(c *gin.Context) {
 		return
 	}
 
+	span.AddEvent(tracing.CallToService)
 	err := p.service.CameraDelete(ctx, cameraID)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -587,6 +592,7 @@ func (p publicHandler) CaseCreate(c *gin.Context) {
 	}
 	caseData.PhotoUrl = filePath
 
+	span.AddEvent(tracing.CallToService)
 	createdCaseID, err := p.service.CaseCreate(ctx, caseData)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
@@ -625,6 +631,7 @@ func (p publicHandler) Refresh(c *gin.Context) {
 	ctx, span := p.tracer.Start(c.Request.Context(), tracing.Refresh)
 	defer span.End()
 
+	span.AddEvent(tracing.CallToService)
 	newRefreshToken, userData, err := p.session.GetAndUpdate(ctx, oldRefreshToken)
 	if err != nil {
 		span.RecordError(err, trace.WithAttributes(
