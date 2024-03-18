@@ -54,10 +54,6 @@ func main() {
 	routers.InitRouting(router, db, session, JWTUtil, middleWarrior, logger, tracer)
 	logger.InfoLogger.Info().Msg("Routing Initialized")
 
-	// Для загрузки тестовых данных
-	//utils.LoadFixtures(db)
-	//utils.ClearDatabase(db)
-
 	go reporting_period.StartReporting(db, logger)
 
 	if err := router.Run("0.0.0.0:8080"); err != nil {

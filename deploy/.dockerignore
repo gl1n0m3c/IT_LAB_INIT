@@ -1,0 +1,12 @@
+.git
+/idea
+
+.gitignore
+.dockerignore
+app.Dockerfile
+README.md
+
+error_example.log
+info_example.log
+example.jpg
+config_example.env
