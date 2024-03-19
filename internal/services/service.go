@@ -33,5 +33,4 @@ type Specialists interface {
 
 	CreateRated(ctx context.Context, rated models.RatedBase) (int, error)
 	GetRatedSolved(ctx context.Context, specialistID, cursor int) (models.RatedCursor, error)
-	UpdateRatedStatus(ctx context.Context, specialistID int, newRated models.RatedUpdate) error
 }

@@ -216,23 +216,34 @@ func (c caseRepo) GetFineData(ctx context.Context, caseID int) (models.FineData,
 	return fineData, nil
 }
 
-func (c caseRepo) GetCaseLevelSolvedRatingsTrueByID(ctx context.Context, caseID, specialistLevel int) (int, int, int, bool, error) {
-	var level, num, numTrue int
+func (c caseRepo) GetCaseLevelSolvedRatingsTrueByID(ctx context.Context, caseID int) (int, int, int, bool, error) {
+	var level int
 	var isSolved bool
 
-	caseGetQuery := `SELECT c.current_level, c.is_solved, COUNT(rs.case_id), SUM(CASE WHEN rs.choice = true THEN 1 ELSE 0 END)
-					 FROM cases c
-					 LEFT JOIN rated_cases rs ON c.id = rs.case_id
-					 LEFT JOIN specialists s ON rs.specialist_id = s.id
-					 WHERE c.id = $1 AND s.level = $2
-					 GROUP BY c.current_level, c.is_solved;`
+	caseLevelQuery := `SELECT c.current_level, c.is_solved
+                       FROM cases c
+                       WHERE c.id = $1;`
 
-	err := c.db.QueryRowxContext(ctx, caseGetQuery, caseID, specialistLevel).Scan(&level, &isSolved, &num, &numTrue)
+	err := c.db.QueryRowxContext(ctx, caseLevelQuery, caseID).Scan(&level, &isSolved)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return 0, 0, 0, false, customErrors.UserBadLevel
+			return 0, 0, 0, false, customErrors.NoRowsCaseErr
 		default:
+			return 0, 0, 0, false, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
+	}
+
+	var num, numTrue int
+	ratingsQuery := `SELECT COUNT(rs.case_id), COALESCE(SUM(CASE WHEN rs.choice = true THEN 1 ELSE 0 END), 0)
+                     FROM rated_cases rs
+                     JOIN specialists s ON rs.specialist_id = s.id
+                     WHERE rs.case_id = $1 AND s.level = $2;`
+
+	err = c.db.QueryRowxContext(ctx, ratingsQuery, caseID, level).Scan(&num, &numTrue)
+	if err != nil {
+		switch {
+		case !errors.Is(err, sql.ErrNoRows):
 			return 0, 0, 0, false, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
 		}
 	}
@@ -409,53 +420,6 @@ func (c caseRepo) GetRatedSolved(ctx context.Context, cursor int) (models.RatedC
 	return casesWithCursor, nil
 }
 
-func (c caseRepo) UpdateRatedStatus(ctx context.Context, newRated models.RatedUpdate) error {
-	tx, err := c.db.Beginx()
-	if err != nil {
-		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.TransactionErr, Err: err})
-	}
-
-	ratedUpdateStatusQuery := `UPDATE rated_cases SET status = $1 WHERE id = $2;`
-
-	res, err := tx.ExecContext(ctx, ratedUpdateStatusQuery, newRated.Status, newRated.CaseID)
-	if err != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
-			return utils.ErrNormalizer(
-				utils.ErrorPair{Message: utils.ExecErr, Err: err},
-				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
-			)
-		}
-		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.ExecErr, Err: err})
-	}
-
-	count, err := res.RowsAffected()
-	if err != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
-			return utils.ErrNormalizer(
-				utils.ErrorPair{Message: utils.RowsErr, Err: err},
-				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
-			)
-		}
-		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: err})
-	}
-
-	if count != 1 {
-		if rbErr := tx.Rollback(); rbErr != nil {
-			return utils.ErrNormalizer(
-				utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)},
-				utils.ErrorPair{Message: utils.RollbackErr, Err: rbErr},
-			)
-		}
-		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.RowsErr, Err: fmt.Errorf(utils.CountErr, count)})
-	}
-
-	if err = tx.Commit(); err != nil {
-		return utils.ErrNormalizer(utils.ErrorPair{Message: utils.CommitErr, Err: err})
-	}
-
-	return nil
-}
-
 func (c caseRepo) GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFul, error) {
 	var caseFul models.CaseFul
 	var ratedNum int
@@ -471,7 +435,12 @@ func (c caseRepo) GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFu
 		&caseFul.Violation.Amount, &caseFul.ViolationValue,
 		&caseFul.Level, &caseFul.CurrentLevel, &caseFul.Datetime, &caseFul.PhotoUrl, &caseFul.IsSolved, &ratedNum)
 	if err != nil {
-		return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return models.CaseFul{}, customErrors.NoRowsCaseErr
+		default:
+			return models.CaseFul{}, utils.ErrNormalizer(utils.ErrorPair{Message: utils.ScanErr, Err: err})
+		}
 	}
 
 	if ratedNum > 1 {

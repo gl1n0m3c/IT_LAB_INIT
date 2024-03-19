@@ -134,7 +134,7 @@ func (s specialistService) CreateRated(ctx context.Context, rated models.RatedBa
 	defer caseCansel1()
 
 	// Проверка, что уровень специалиста совпадает с уровнем кейса + кейс еще не разрешен + проверка на количество оценок
-	level, numberOfRated, numberOfTrue, isSolved, err := s.caseRepo.GetCaseLevelSolvedRatingsTrueByID(caseCtx1, rated.CaseID, specialist.Level)
+	level, numberOfRated, numberOfTrue, isSolved, err := s.caseRepo.GetCaseLevelSolvedRatingsTrueByID(caseCtx1, rated.CaseID)
 	if err != nil {
 		s.logger.ErrorLogger.Error().Msg(err.Error())
 		return 0, err
@@ -142,6 +142,10 @@ func (s specialistService) CreateRated(ctx context.Context, rated models.RatedBa
 	if isSolved || numberOfRated >= s.k {
 		s.logger.ErrorLogger.Info().Msg(customErrors.CaseAlreadySolved.Error())
 		return 0, customErrors.CaseAlreadySolved
+	}
+	if level != specialist.Level {
+		s.logger.ErrorLogger.Info().Msg(customErrors.UserBadLevel.Error())
+		return 0, customErrors.UserBadLevel
 	}
 
 	caseCtx2, caseCansel2 := context.WithTimeout(ctx, s.dbResponseTime)
@@ -258,35 +262,5 @@ func (s specialistService) GetRatedSolved(ctx context.Context, specialistID, cur
 	s.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessGet, "rated_cases"))
 
 	return solvedRated, nil
-
-}
-
-func (s specialistService) UpdateRatedStatus(ctx context.Context, specialistID int, newRated models.RatedUpdate) error {
-	specCtx, specCansel := context.WithTimeout(ctx, s.dbResponseTime)
-	defer specCansel()
-
-	// Проверка, что аккаунт специалиста подтвержден
-	specialist, err := s.specialistRepo.GetByID(specCtx, specialistID)
-	if err != nil {
-		s.logger.ErrorLogger.Error().Msg(err.Error())
-		return err
-	}
-	if !specialist.IsVerified {
-		s.logger.ErrorLogger.Info().Msg(customErrors.UserUnverified.Error())
-		return customErrors.UserUnverified
-	}
-
-	ctx, cansel := context.WithTimeout(ctx, s.dbResponseTime)
-	defer cansel()
-
-	err = s.caseRepo.UpdateRatedStatus(ctx, newRated)
-	if err != nil {
-		s.logger.ErrorLogger.Error().Msg(err.Error())
-		return err
-	}
-
-	s.logger.InfoLogger.Info().Msg(fmt.Sprintf(responses.ResponseSuccessUpdate, "rated_case"))
-
-	return nil
 
 }

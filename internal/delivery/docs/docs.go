@@ -560,7 +560,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Cursor ID for pagination",
-                        "name": "cursor_id",
+                        "name": "cursor",
                         "in": "query",
                         "required": true
                     },
@@ -623,7 +623,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Cursor ID for pagination",
-                        "name": "cursor_id",
+                        "name": "cursor",
                         "in": "query",
                         "required": true
                     },

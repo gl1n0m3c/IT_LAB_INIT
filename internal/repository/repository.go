@@ -34,14 +34,13 @@ type Cases interface {
 	UpdateCaseLevel(ctx context.Context, caseID, level int) error
 	UpdateCaseSetSolved(ctx context.Context, caseID int, rightChoice bool) error
 	GetFineData(ctx context.Context, caseID int) (models.FineData, error)
-	GetCaseLevelSolvedRatingsTrueByID(ctx context.Context, caseID, specialistLevel int) (int, int, int, bool, error)
+	GetCaseLevelSolvedRatingsTrueByID(ctx context.Context, caseID int) (int, int, int, bool, error)
 	GetCasesByLevel(ctx context.Context, specialistID, level, cursor int) (models.CaseCursor, error)
 	DeleteCase(ctx context.Context, caseID int) error
 
 	CreateRated(ctx context.Context, rated models.RatedBase) (int, error)
 	GetRatedSolved(ctx context.Context, cursor int) (models.RatedCursor, error)
 	GetNumberRatedByCaseID(ctx context.Context, caseID int) (int, error)
-	UpdateRatedStatus(ctx context.Context, newRated models.RatedUpdate) error
 
 	GetFulCaseByID(ctx context.Context, caseID int) (models.CaseFul, error)
 }
